@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Asset Management</title>
+    {% load static %}
+    <link rel="stylesheet" type="text/css" href="{% static 'myapp/css/style.css' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <style>
+        // ...similar styles as department_management.html...
+        .asset-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .asset-table th,
+        .asset-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .form-group.full-width {
+            grid-column: span 3;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #2c3e50;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            border-color: #3498db;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        }
+
+        .modal-content {
+            max-width: 900px;
+            padding: 30px;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .form-section {
+            margin-bottom: 25px;
+        }
+
+        .form-section-title {
+            font-size: 16px;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #3498db;
+        }
+
+        .form-actions {
+            grid-column: span 3;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+
+        .btn-cancel {
+            background-color: #95a5a6;
+            color: white;
+        }
+
+        .asset-category {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .category-tag {
+            padding: 5px 10px;
+            background-color: #f0f2f5;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .category-tag:hover {
+            background-color: #e2e6ea;
+        }
+
+        .category-tag.selected {
+            background-color: #3498db;
+            color: white;
+        }
+
+        /* Modal specific styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            overflow-y: auto;
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 2% auto;
+            padding: 20px;
+            border-radius: 8px;
+            width: 80%;
+            max-width: 900px;
+            position: relative;
+            animation: modalSlideIn 0.3s ease-out;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                transform: translateY(-100px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        /* Add sidebar styles */
+        .sidebar {
+            width: 250px;
+            background-color: #2c3e50;
+            padding: 20px;
+            color: white;
+        }
+        
+        .sidebar-menu {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .sidebar-menu li {
+            margin-bottom: 10px;
+        }
+        
+        .sidebar-menu a {
+            color: white;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        
+        .sidebar-menu a:hover {
+            background-color: #34495e;
+        }
+        
+        .sidebar-menu i {
+            margin-right: 10px;
+            width: 20px;
+        }
+
+        /* Updated Layout Styles */
+        .system-layout {
+            display: flex;
+            min-height: calc(100vh - 80px);
+            margin-top: 20px;
+        }
+        
+        .sidebar {
+            width: 250px;
+            background-color: #2c3e50;
+            padding: 20px;
+            color: white;
+            position: fixed;
+            height: calc(100vh - 80px);
+            overflow-y: auto;
+        }
+        
+        .main-content {
+            flex: 1;
+            margin-left: 270px; /* sidebar width + 20px gap */
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        /* Improved Sidebar Styles */
+        .sidebar-menu {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .sidebar-menu li {
+            margin-bottom: 10px;
+        }
+        
+        .sidebar-menu a {
+            color: white;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+        }
+        
+        .sidebar-menu a:hover {
+            background-color: #34495e;
+            transform: translateX(5px);
+        }
+        
+        .sidebar-menu a.active {
+            background-color: #3498db;
+        }
+        
+        .sidebar-menu i {
+            margin-right: 12px;
+            width: 20px;
+            text-align: center;
+        }
+
+        /* Content Header Improvements */
+        .content-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .content-header h2 {
+            margin: 0;
+            color: #2c3e50;
+        }
+
+        /* Administration section styles */
+        .sidebar-menu .section-title {
+            color: #95a5a6;
+            font-size: 12px;
+            text-transform: uppercase;
+            margin: 20px 0 10px;
+            padding-left: 15px;
+        }
+
+        .sidebar-menu .sub-menu {
+            padding-left: 20px;
+            margin-top: 5px;
+        }
+
+        .sidebar-menu .sub-menu a {
+            font-size: 0.9em;
+            padding: 8px 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-header">
+        <div class="user-info">
+            <h1>Asset Management</h1>
+            <p class="user-details">{{ employee.name }} {{ employee.surname }} | {{ employee.department }}</p>
+        </div>
+        <div class="header-actions">
+            <a href="{% url 'system_management' %}" class="back-button">Back to System Management</a>
+            <button class="logout-button">Logout</button>
+        </div>
+    </div>
+
+    <div class="system-layout">
+        <div class="sidebar">
+            <ul class="sidebar-menu">
+                <div class="section-title">Asset Register</div>
+                <li>
+                    <a href="{% url 'asset_register' %}" class="{% if request.path == '/asset-register/' %}active{% endif %}">
+                        <i class="fas fa-book"></i>
+                        Asset Overview
+                    </a>
+                </li>
+                <li>
+                    <a href="#" onclick="openAddAssetModal(); return false;">
+                        <i class="fas fa-plus-circle"></i>
+                        Register New Asset
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'asset_movement' %}" class="{% if request.path == '/asset-movement/' %}active{% endif %}">
+                        <i class="fas fa-exchange-alt"></i>
+                        Asset Movement
+                    </a>
+                </li>
+                <li>
+                    <a href="#asset-disposal">
+                        <i class="fas fa-trash-alt"></i>
+                        Asset Disposal
+                    </a>
+                </li>
+
+                <div class="section-title">Asset Management</div>
+                <li>
+                    <a href="{% url 'asset_register' %}" class="{% if request.path == '/asset-register/' %}active{% endif %}">
+                        <i class="fas fa-book"></i>
+                        Asset Register
+                    </a>
+                </li>
+                <li>
+                    <a href="#asset-list" class="{% if request.path == '/asset-management/' %}active{% endif %}" onclick="scrollToSection('asset-list')">
+                        <i class="fas fa-list"></i>
+                        Asset List
+                    </a>
+                </li>
+                <li>
+                    <a href="#" onclick="openAddAssetModal(); return false;">
+                        <i class="fas fa-plus"></i>
+                        Add Asset
+                    </a>
+                </li>
+                <li>
+                    <a href="#asset-categories">
+                        <i class="fas fa-tags"></i>
+                        Categories
+                    </a>
+                </li>
+
+                <div class="section-title">Administration</div>
+                <li>
+                    <a href="#receive-orders">
+                        <i class="fas fa-truck-loading"></i>
+                        Receive Orders
+                    </a>
+                    <div class="sub-menu">
+                        <a href="#pending-orders">
+                            <i class="fas fa-clock"></i>
+                            Pending Orders
+                        </a>
+                        <a href="#completed-orders">
+                            <i class="fas fa-check-circle"></i>
+                            Completed Orders
+                        </a>
+                    </div>
+                </li>
+                <li>
+                    <a href="#grvs">
+                        <i class="fas fa-file-invoice"></i>
+                        GRVs
+                    </a>
+                    <div class="sub-menu">
+                        <a href="#create-grv">
+                            <i class="fas fa-plus"></i>
+                            Create GRV
+                        </a>
+                        <a href="#grv-list">
+                            <i class="fas fa-list-alt"></i>
+                            GRV List
+                        </a>
+                    </div>
+                </li>
+
+                <div class="section-title">Reports</div>
+                <li>
+                    <a href="#asset-reports">
+                        <i class="fas fa-chart-bar"></i>
+                        Reports
+                    </a>
+                </li>
+                <li>
+                    <a href="#asset-maintenance">
+                        <i class="fas fa-tools"></i>
+                        Maintenance
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="main-content">
+            {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                <div class="alert {% if message.tags %}alert-{{ message.tags }}{% endif %}">
+                    {{ message }}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <div class="content-header">
+                <button class="btn btn-primary" onclick="openAddAssetModal()">
+                    <i class="fas fa-plus"></i> Add Asset
+                </button>
+            </div>
+
+            <table class="asset-table">
+                <thead>
+                    <tr>
+                        <th>Asset Number</th>
+                        <th>Name</th>
+                        <th>Category</th>
+                        <th>Department</th>
+                        <th>Location</th>
+                        <th>Condition</th>
+                        <th>Initiator</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for asset in assets %}
+                    <tr data-id="{{ asset.id }}" {% if not asset.is_active %}style="opacity: 0.6;"{% endif %}>
+                        <td>{{ asset.asset_number }}</td>
+                        <td>{{ asset.name }}</td>
+                        <td data-category="{{ asset.category }}">{{ asset.category }}</td>
+                        <td data-department-id="{{ asset.department.id }}">{{ asset.department.name }}</td>
+                        <td>{{ asset.location }}</td>
+                        <td data-condition="{{ asset.condition }}">{{ asset.get_condition_display }}</td>
+                        <td>{{ asset.initiator.name }} {{ asset.initiator.surname }}</td>
+                        <td>{{ asset.is_active|yesno:"Active,Inactive" }}</td>
+                        <td data-purchase-date="{{ asset.purchase_date|date:'Y-m-d' }}" 
+                            data-purchase-cost="{{ asset.purchase_cost }}"
+                            data-description="{{ asset.description|escapejs }}"
+                            style="display: none;">
+                        </td>
+                        <td>
+                            <button class="btn btn-edit" onclick="editAsset('{{ asset.id }}')">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn {% if asset.is_active %}btn-delete{% else %}btn-success{% endif %}" 
+                                    onclick="toggleAssetStatus('{{ asset.id }}', {{ asset.is_active|lower }})">
+                                <i class="fas {% if asset.is_active %}fa-ban{% else %}fa-check{% endif %}"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Add Asset Modal -->
+    <div id="addAssetModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-plus-circle"></i> Add New Asset</h2>
+                <span class="close-modal" onclick="closeAddAssetModal()">&times;</span>
+            </div>
+            <form action="{% url 'add_asset' %}" method="POST" onsubmit="return validateAssetForm()">
+                {% csrf_token %}
+                
+                <div class="form-section">
+                    <h3 class="form-section-title">Basic Information</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="asset_number">Asset Number*</label>
+                            <input type="text" id="asset_number" name="asset_number" required 
+                                   placeholder="Enter asset number">
+                        </div>
+                        <div class="form-group">
+                            <label for="name">Asset Name*</label>
+                            <input type="text" id="name" name="name" required 
+                                   placeholder="Enter asset name">
+                        </div>
+                        <div class="form-group">
+                            <label for="category">Category*</label>
+                            <div class="asset-category">
+                                <span class="category-tag" data-category="IT">IT Equipment</span>
+                                <span class="category-tag" data-category="FURNITURE">Furniture</span>
+                                <span class="category-tag" data-category="VEHICLE">Vehicle</span>
+                                <span class="category-tag" data-category="MACHINERY">Machinery</span>
+                            </div>
+                            <input type="hidden" id="category" name="category" required>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3 class="form-section-title">Location & Assignment</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="department">Department*</label>
+                            <select id="department" name="department" required>
+                                <option value="">Select Department</option>
+                                {% for dept in departments %}
+                                    <option value="{{ dept.id }}">{{ dept.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="location">Location*</label>
+                            <input type="text" id="location" name="location" required 
+                                   placeholder="Enter asset location">
+                        </div>
+                        <div class="form-group">
+                            <label for="condition">Condition*</label>
+                            <select id="condition" name="condition" required>
+                                <option value="">Select Condition</option>
+                                <option value="NEW">New</option>
+                                <option value="GOOD">Good</option>
+                                <option value="FAIR">Fair</option>
+                                <option value="POOR">Poor</option>
+                                <option value="RETIRED">Retired</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3 class="form-section-title">Purchase Information</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="purchase_date">Purchase Date*</label>
+                            <input type="date" id="purchase_date" name="purchase_date" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="purchase_cost">Purchase Cost (US)*</label>
+                            <input type="number" id="purchase_cost" name="purchase_cost" 
+                                   step="0.01" required placeholder="Enter amount in US">
+                        </div>
+                        <div class="form-group full-width">
+                            <label for="description">Description</label>
+                            <textarea id="description" name="description" rows="3" 
+                                    placeholder="Enter asset description"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-cancel" onclick="closeAddAssetModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Asset</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Asset Modal -->
+    <div id="editAssetModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-edit"></i> Edit Asset</h2>
+                <span class="close-modal" onclick="closeEditAssetModal()">&times;</span>
+            </div>
+            <form id="editAssetForm" method="POST" onsubmit="return validateEditAssetForm()">
+                {% csrf_token %}
+                <div class="form-section">
+                    <h3 class="form-section-title">Basic Information</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="edit_asset_number">Asset Number*</label>
+                            <input type="text" id="edit_asset_number" name="asset_number" required 
+                                   placeholder="Enter asset number">
+                        </div>
+                        <div class="form-group">
+                            <label for="edit_name">Asset Name*</label>
+                            <input type="text" id="edit_name" name="name" required 
+                                   placeholder="Enter asset name">
+                        </div>
+                        <div class="form-group">
+                            <label for="edit_category">Category*</label>
+                            <div class="asset-category">
+                                <span class="category-tag" data-category="IT">IT Equipment</span>
+                                <span class="category-tag" data-category="FURNITURE">Furniture</span>
+                                <span class="category-tag" data-category="VEHICLE">Vehicle</span>
+                                <span class="category-tag" data-category="MACHINERY">Machinery</span>
+                            </div>
+                            <input type="hidden" id="edit_category" name="category" required>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3 class="form-section-title">Location & Assignment</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="edit_department">Department*</label>
+                            <select id="edit_department" name="department" required>
+                                <option value="">Select Department</option>
+                                {% for dept in departments %}
+                                    <option value="{{ dept.id }}">{{ dept.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit_location">Location*</label>
+                            <input type="text" id="edit_location" name="location" required 
+                                   placeholder="Enter asset location">
+                        </div>
+                        <div class="form-group">
+                            <label for="edit_condition">Condition*</label>
+                            <select id="edit_condition" name="condition" required>
+                                <option value="">Select Condition</option>
+                                <option value="NEW">New</option>
+                                <option value="GOOD">Good</option>
+                                <option value="FAIR">Fair</option>
+                                <option value="POOR">Poor</option>
+                                <option value="RETIRED">Retired</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3 class="form-section-title">Purchase Information</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="edit_purchase_date">Purchase Date*</label>
+                            <input type="date" id="edit_purchase_date" name="purchase_date" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit_purchase_cost">Purchase Cost (US)*</label>
+                            <input type="number" id="edit_purchase_cost" name="purchase_cost" 
+                                   step="0.01" required placeholder="Enter amount in US">
+                        </div>
+                        <div class="form-group full-width">
+                            <label for="edit_description">Description</label>
+                            <textarea id="edit_description" name="description" rows="3" 
+                                    placeholder="Enter asset description"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-cancel" onclick="closeEditAssetModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update Asset</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function openAssetModal() {
+            document.getElementById('assetModal').style.display = 'block';
+        }
+
+        function closeAssetModal() {
+            document.getElementById('assetModal').style.display = 'none';
+        }
+
+        function toggleAssetStatus(id, isActive) {
+            if (confirm(`Are you sure you want to ${isActive ? 'deactivate' : 'activate'} this asset?`)) {
+                fetch(`/toggle-asset-status/${id}/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    },
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        location.reload();
+                    } else {
+                        alert('Error updating asset status');
+                    }
+                });
+            }
+        }
+
+        window.onclick = function(event) {
+            if (event.target == document.getElementById('addAssetModal')) {
+                closeAddAssetModal();
+            }
+        }
+        
+        // Add category selection functionality
+        document.querySelectorAll('.category-tag').forEach(tag => {
+            tag.addEventListener('click', function() {
+                document.querySelectorAll('.category-tag').forEach(t => t.classList.remove('selected'));
+                this.classList.add('selected');
+                document.getElementById('category').value = this.dataset.category;
+            });
+        });
+
+        // Form validation
+        function validateAssetForm() {
+            const required = ['asset_number', 'name', 'category', 'department', 
+                            'location', 'condition', 'purchase_date', 'purchase_cost'];
+            let isValid = true;
+
+            required.forEach(field => {
+                const element = document.getElementById(field);
+                if (!element.value) {
+                    element.classList.add('invalid-input');
+                    isValid = false;
+                } else {
+                    element.classList.remove('invalid-input');
+                }
+            });
+
+            return isValid;
+        }
+
+        function openAddAssetModal() {
+            const modal = document.getElementById('addAssetModal');
+            modal.style.display = 'block';
+            document.body.style.overflow = 'hidden'; // Prevent background scrolling
+            // Reset form
+            modal.querySelector('form').reset();
+            document.querySelectorAll('.category-tag').forEach(tag => tag.classList.remove('selected'));
+            document.getElementById('category').value = '';
+        }
+
+        function closeAddAssetModal() {
+            const modal = document.getElementById('addAssetModal');
+            modal.style.display = 'none';
+            document.body.style.overflow = 'auto'; // Restore scrolling
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('addAssetModal');
+            if (event.target === modal) {
+                closeAddAssetModal();
+            }
+        }
+
+        // Close modal when pressing Escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeAddAssetModal();
+            }
+        });
+
+        // Update the add button click handler
+        document.querySelector('.content-header .btn-primary').onclick = openAddAssetModal;
+
+        function editAsset(id) {
+            const row = document.querySelector(`tr[data-id="${id}"]`);
+            const modal = document.getElementById('editAssetModal');
+            const form = document.getElementById('editAssetForm');
+            
+            form.action = `/edit-asset/${id}/`;
+            
+            // Populate form fields from row data
+            document.getElementById('edit_asset_number').value = row.children[0].textContent.trim();
+            document.getElementById('edit_name').value = row.children[1].textContent.trim();
+            document.getElementById('edit_asset_number').value = row.children[0].textContent.trim();
+            document.getElementById('edit_serial_number').value = row.children[1].textContent.trim() !== '-' ? 
+                row.children[1].textContent.trim() : '';
+            document.getElementById('edit_name').value = row.children[2].textContent.trim();
+                    
+            // Set category
+            const category = row.children[2].getAttribute('data-category');
+            document.getElementById('edit_category').value = category;
+            document.querySelectorAll('#editAssetModal .category-tag').forEach(tag => {
+                if (tag.dataset.category === category) {
+                    tag.classList.add('selected');
+                } else {
+                    tag.classList.remove('selected');
+                }
+            });
+            
+            // Set department
+            document.getElementById('edit_department').value = row.children[3].getAttribute('data-department-id');
+            document.getElementById('edit_location').value = row.children[4].textContent.trim();
+            document.getElementById('edit_condition').value = row.children[5].getAttribute('data-condition');
+
+            // Set purchase information
+            const hiddenCell = row.querySelector('td[data-purchase-date]');
+            document.getElementById('edit_purchase_date').value = hiddenCell.getAttribute('data-purchase-date');
+            document.getElementById('edit_purchase_cost').value = hiddenCell.getAttribute('data-purchase-cost');
+            document.getElementById('edit_description').value = hiddenCell.getAttribute('data-description');
+            
+            modal.style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeEditAssetModal() {
+            const modal = document.getElementById('editAssetModal');
+            modal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+
+        function deleteAsset(id) {
+            if (confirm('Are you sure you want to delete this asset? This cannot be undone.')) {
+                fetch(`/delete-asset/${id}/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    },
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        location.reload();
+                    } else {
+                        alert('Error deleting asset');
+                    }
+                });
+            }
+        }
+
+        // Add category selection for edit form
+        document.querySelectorAll('#editAssetModal .category-tag').forEach(tag => {
+            tag.addEventListener('click', function() {
+                document.querySelectorAll('#editAssetModal .category-tag').forEach(t => t.classList.remove('selected'));
+                this.classList.add('selected');
+                document.getElementById('edit_category').value = this.dataset.category;
+            });
+        });
+
+        // Add separate validation for edit form
+        function validateEditAssetForm() {
+            const required = ['edit_asset_number', 'edit_name', 'edit_category', 'edit_department', 
+                            'edit_location', 'edit_condition', 'edit_purchase_date', 'edit_purchase_cost'];
+            let isValid = true;
+
+            required.forEach(field => {
+                const element = document.getElementById(field);
+                if (!element.value) {
+                    element.classList.add('invalid-input');
+                    isValid = false;
+                } else {
+                    element.classList.remove('invalid-input');
+                }
+            });
+
+            return isValid;
+        }
+
+        // Update form submission
+        document.getElementById('editAssetForm').onsubmit = function() {
+            return validateEditAssetForm();
+        };
+
+        // Update the window click handler
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.style.display = 'none';
+                document.body.style.overflow = 'auto';
+            }
+        }
+
+        function scrollToSection(sectionId) {
+            const element = document.getElementById(sectionId);
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+    </script>
+</body>
+</html>

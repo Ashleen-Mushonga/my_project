@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard</title>
+    {% load static %}
+    <link rel="stylesheet" type="text/css" href="{% static 'myapp/css/style.css' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <style>
+        .module-card.it-module {
+            background: linear-gradient(135deg, #2980b9, #3498db);
+        }
+        
+        .module-card.it-module:hover {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            transform: translateY(-5px);
+        }
+
+        .module-card i {
+            font-size: 2.5em;
+            margin-bottom: 15px;
+            color: rgba(255, 255, 255, 0.9);
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-header">
+        <div class="user-info">
+            <span class="welcome-text">Welcome,</span>
+            <h1>{{ employee.name }} {{ employee.surname }}</h1>
+            <p class="user-details">{{ employee.department }} | {{ employee.branch }} | {{ employee.section }}</p>
+        </div>
+        <div class="header-actions">
+            <button class="logout-button">Logout</button>
+        </div>
+    </div>
+
+    <div class="dashboard-container">
+        <h2 class="modules-title">Available Modules</h2>
+        <div class="modules-grid">
+            {% for module in modules %}
+            <a href="{{ module.url }}" class="module-card {% if 'IT' in module.name %}it-module{% endif %}">
+                <i class="fas {{ module.icon }}"></i>
+                <h3>{{ module.name }}</h3>
+                <p>{{ module.description }}</p>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</body>
+</html>

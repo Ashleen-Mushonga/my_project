@@ -1,0 +1,537 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Employee Management</title>
+    {% load static %}
+    <link rel="stylesheet" type="text/css" href="{% static 'myapp/css/style.css' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <style>
+        .system-layout {
+            display: flex;
+            min-height: calc(100vh - 80px); /* Adjust based on header height */
+        }
+        
+        .sidebar {
+            width: 250px;
+            background-color: #2c3e50;
+            padding: 20px;
+            color: white;
+        }
+        
+        .sidebar-menu {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .sidebar-menu li {
+            margin-bottom: 10px;
+        }
+        
+        .sidebar-menu a {
+            color: white;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        
+        .sidebar-menu a:hover {
+            background-color: #34495e;
+        }
+        
+        .sidebar-menu i {
+            margin-right: 10px;
+            width: 20px;
+        }
+        
+        .main-content {
+            flex: 1;
+            padding: 20px;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 20px;
+            width: 70%;
+            max-width: 700px;
+            border-radius: 8px;
+            position: relative;
+        }
+
+        .close-modal {
+            position: absolute;
+            right: 20px;
+            top: 10px;
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background-color: #3498db;
+            color: white;
+        }
+
+        .employee-list {
+            margin-top: 20px;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .alert {
+            padding: 15px;
+            margin-bottom: 20px;
+            border: 1px solid transparent;
+            border-radius: 4px;
+        }
+        
+        .alert-error {
+            color: #721c24;
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+        }
+        
+        .alert-success {
+            color: #155724;
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+        }
+
+        .error-feedback {
+            color: #dc3545;
+            font-size: 12px;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .invalid-input {
+            border-color: #dc3545 !important;
+        }
+
+        /* Table Styles */
+        .employee-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .employee-table th,
+        .employee-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .employee-table th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+
+        .employee-table tr:hover {
+            background-color: #f5f5f5;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-edit {
+            background-color: #ffc107;
+            color: #000;
+        }
+
+        .btn-delete {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .search-box {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 200px;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-header">
+        <div class="user-info">
+            <h1>Employee Management</h1>
+            <p class="user-details">{{ employee.name }} {{ employee.surname }} | {{ employee.department }}</p>
+        </div>
+        <div class="header-actions">
+            <a href="{% url 'dashboard' %}" class="back-button">Back to Dashboard</a>
+            <button class="logout-button">Logout</button>
+        </div>
+    </div>
+
+    <div class="system-layout">
+        <div class="sidebar">
+            <ul class="sidebar-menu">
+                <li>
+                    <a href="#employee-list">
+                        <i class="fas fa-users"></i>
+                        Employee List
+                    </a>
+                </li>
+                <li>
+                    <a href="#add-employee">
+                        <i class="fas fa-user-plus"></i>
+                        Add Employee
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="main-content">
+            {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                <div class="alert {% if message.tags %}alert-{{ message.tags }}{% endif %}">
+                    {{ message }}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            
+            <div class="content-header">
+                <h2>Employee Management</h2>
+                <button class="btn btn-primary" onclick="openModal()">
+                    <i class="fas fa-plus"></i> Add New Employee
+                </button>
+            </div>
+
+            <div class="employee-list">
+                <div class="table-header">
+                    <input type="text" class="search-box" id="employeeSearch" 
+                           placeholder="Search employees..." onkeyup="searchEmployees()">
+                </div>
+                <table class="employee-table" id="employeeTable">
+                    <thead>
+                        <tr>
+                            <th>Employee Number</th>
+                            <th>Name</th>
+                            <th>Department</th>
+                            <th>Branch</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for emp in employees %}
+                        <tr {% if not emp.is_active %}style="opacity: 0.6;"{% endif %}>
+                            <td>{{ emp.employee_number }}</td>
+                            <td>{{ emp.name }} {{ emp.surname }}</td>
+                            <td>{{ emp.department.name }}</td>
+                            <td>{{ emp.branch }}</td>
+                            <td>{{ emp.email }}</td>
+                            <td>{{ emp.phone_number }}</td>
+                            <td class="action-buttons">
+                                <button class="btn btn-edit" onclick="editEmployee('{{ emp.id }}', '{{ emp.employee_number }}', '{{ emp.name }}', '{{ emp.surname }}', '{{ emp.email }}', '{{ emp.phone_number }}', '{{ emp.department }}', '{{ emp.branch }}', '{{ emp.section }}')">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn {% if emp.is_active %}btn-delete{% else %}btn-success{% endif %}" 
+                                        onclick="toggleEmployeeStatus('{{ emp.id }}', {{ emp.is_active|lower }})">
+                                    <i class="fas {% if emp.is_active %}fa-user-slash{% else %}fa-user-check{% endif %}"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Add Employee Modal -->
+            <div id="addEmployeeModal" class="modal">
+                <div class="modal-content">
+                    <span class="close-modal" onclick="closeModal()">&times;</span>
+                    <h2>Add New Employee</h2>
+                    <form action="{% url 'add_employee' %}" method="POST" id="employeeForm" onsubmit="return validateForm()">
+                        {% csrf_token %}
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="employee_number">Employee Number*</label>
+                                <input type="text" id="employee_number" name="employee_number" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="name">First Name*</label>
+                                <input type="text" id="name" name="name" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="surname">Surname*</label>
+                                <input type="text" id="surname" name="surname" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="email">Email Address*</label>
+                                <input type="email" id="email" name="email" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="phone_number">Phone Number* (Format: 07XXXXXXXX)</label>
+                                <input type="text" id="phone_number" name="phone_number" pattern="07[0-9]{8}" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="department">Department*</label>
+                                <select id="department" name="department" required>
+                                    <option value="">Select Department</option>
+                                    {% for dept in departments %}
+                                        <option value="{{ dept.id }}">{{ dept.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="branch">Branch*</label>
+                                <input type="text" id="branch" name="branch" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="section">Section*</label>
+                                <input type="text" id="section" name="section" required>
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">Create Employee</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Edit Employee Modal -->
+            <div id="editEmployeeModal" class="modal">
+                <div class="modal-content">
+                    <span class="close-modal" onclick="closeModal()">&times;</span>
+                    <h2>Edit Employee</h2>
+                    <form action="" method="POST" id="editEmployeeForm" onsubmit="return validateForm()">
+                        {% csrf_token %}
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="edit_employee_number">Employee Number*</label>
+                                <input type="text" id="edit_employee_number" name="employee_number" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="edit_name">First Name*</label>
+                                <input type="text" id="edit_name" name="name" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="edit_surname">Surname*</label>
+                                <input type="text" id="edit_surname" name="surname" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="edit_email">Email Address*</label>
+                                <input type="email" id="edit_email" name="email" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="edit_phone_number">Phone Number* (Format: 07XXXXXXXX)</label>
+                                <input type="text" id="edit_phone_number" name="phone_number" pattern="07[0-9]{8}" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="edit_department">Department*</label>
+                                <select id="edit_department" name="department" required>
+                                    <option value="">Select Department</option>
+                                    {% for dept in departments %}
+                                        <option value="{{ dept.id }}">{{ dept.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="edit_branch">Branch*</label>
+                                <input type="text" id="edit_branch" name="branch" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="edit_section">Section*</label>
+                                <input type="text" id="edit_section" name="section" required>
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">Update Employee</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <script>
+                function openModal() {
+                    document.getElementById('addEmployeeModal').style.display = 'block';
+                }
+
+                function closeModal() {
+                    document.getElementById('addEmployeeModal').style.display = 'none';
+                    document.getElementById('editEmployeeModal').style.display = 'none';
+                }
+
+                // Close modal when clicking outside
+                window.onclick = function(event) {
+                    if (event.target == document.getElementById('addEmployeeModal') || event.target == document.getElementById('editEmployeeModal')) {
+                        closeModal();
+                    }
+                }
+
+                function validateForm() {
+                    const form = document.getElementById('employeeForm');
+                    let isValid = true;
+
+                    // Reset previous validation states
+                    const inputs = form.querySelectorAll('input, select');
+                    inputs.forEach(input => {
+                        input.classList.remove('invalid-input');
+                        const errorDiv = input.parentElement.querySelector('.error-feedback');
+                        if (errorDiv) errorDiv.style.display = 'none';
+                    });
+
+                    // Phone number validation
+                    const phoneInput = form.querySelector('#phone_number');
+                    if (!/^07\d{8}$/.test(phoneInput.value)) {
+                        showError(phoneInput, 'Phone number must start with 07 and be 10 digits long');
+                        isValid = false;
+                    }
+
+                    // Email validation
+                    const emailInput = form.querySelector('#email');
+                    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailInput.value)) {
+                        showError(emailInput, 'Please enter a valid email address');
+                        isValid = false;
+                    }
+
+                    // Required fields validation
+                    inputs.forEach(input => {
+                        if (input.required && !input.value.trim()) {
+                            showError(input, 'This field is required');
+                            isValid = false;
+                        }
+                    });
+
+                    return isValid;
+                }
+
+                function showError(input, message) {
+                    input.classList.add('invalid-input');
+                    let errorDiv = input.parentElement.querySelector('.error-feedback');
+                    if (!errorDiv) {
+                        errorDiv = document.createElement('div');
+                        errorDiv.className = 'error-feedback';
+                        input.parentElement.appendChild(errorDiv);
+                    }
+                    errorDiv.textContent = message;
+                    errorDiv.style.display = 'block';
+                }
+
+                function searchEmployees() {
+                    const input = document.getElementById('employeeSearch');
+                    const filter = input.value.toLowerCase();
+                    const table = document.getElementById('employeeTable');
+                    const rows = table.getElementsByTagName('tr');
+
+                    for (let i = 1; i < rows.length; i++) {
+                        let show = false;
+                        const cells = rows[i].getElementsByTagName('td');
+                        
+                        for (let cell of cells) {
+                            const text = cell.textContent || cell.innerText;
+                            if (text.toLowerCase().indexOf(filter) > -1) {
+                                show = true;
+                                break;
+                            }
+                        }
+                        rows[i].style.display = show ? '' : 'none';
+                    }
+                }
+
+                function editEmployee(id, empNumber, name, surname, email, phone, dept, branch, section) {
+                    const modal = document.getElementById('editEmployeeModal');
+                    const form = document.getElementById('editEmployeeForm');
+                    
+                    // Set form action
+                    form.action = `/edit-employee/${id}/`;
+                    
+                    // Populate form fields
+                    document.getElementById('edit_employee_number').value = empNumber;
+                    document.getElementById('edit_name').value = name;
+                    document.getElementById('edit_surname').value = surname;
+                    document.getElementById('edit_email').value = email;
+                    document.getElementById('edit_phone_number').value = phone;
+                    document.getElementById('edit_department').value = dept;
+                    document.getElementById('edit_branch').value = branch;
+                    document.getElementById('edit_section').value = section;
+                    
+                    modal.style.display = 'block';
+                }
+
+                function toggleEmployeeStatus(id, isActive) {
+                    if (confirm(`Are you sure you want to ${isActive ? 'deactivate' : 'activate'} this employee?`)) {
+                        fetch(`/toggle-employee-status/${id}/`, {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                            },
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.status === 'success') {
+                                location.reload();
+                            } else {
+                                alert('Error updating employee status');
+                            }
+                        });
+                    }
+                }
+            </script>
+        </div>
+    </div>
+</body>
+</html>

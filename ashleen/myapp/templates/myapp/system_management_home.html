@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>System Management</title>
+    {% load static %}
+    <link rel="stylesheet" type="text/css" href="{% static 'myapp/css/style.css' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <style>
+        .system-layout {
+            display: flex;
+            min-height: calc(100vh - 80px); /* Adjust based on header height */
+        }
+        
+        .sidebar {
+            width: 250px;
+            background-color: #2c3e50;
+            padding: 20px;
+            color: white;
+        }
+        
+        .sidebar-menu {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .sidebar-menu li {
+            margin-bottom: 10px;
+        }
+        
+        .sidebar-menu a {
+            color: white;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        
+        .sidebar-menu a:hover {
+            background-color: #34495e;
+        }
+        
+        .sidebar-menu i {
+            margin-right: 10px;
+            width: 20px;
+        }
+        
+        .main-content {
+            flex: 1;
+            padding: 20px;
+        }
+
+        .dashboard-tiles {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .dashboard-tile {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            flex: 1;
+            min-width: 200px;
+            transition: background-color 0.3s;
+        }
+
+        .dashboard-tile:hover {
+            background-color: #e9ecef;
+        }
+
+        .dashboard-tile i {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-header">
+        <div class="user-info">
+            <h1>System Management</h1>
+            <p class="user-details">{{ employee.name }} {{ employee.surname }} | {{ employee.department }}</p>
+        </div>
+        <div class="header-actions">
+            <a href="{% url 'dashboard' %}" class="back-button">Back to Dashboard</a>
+            <button class="logout-button">Logout</button>
+        </div>
+    </div>
+
+    <div class="system-layout">
+        <div class="sidebar">
+            <ul class="sidebar-menu">
+                <li>
+                    <a href="{% url 'employee_management' %}">
+                        <i class="fas fa-users"></i>
+                        Employee Management
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'department_management' %}">
+                        <i class="fas fa-building"></i>
+                        Department Management
+                    </a>
+                </li>
+                <li>
+                    <a href="#roles">
+                        <i class="fas fa-id-badge"></i>
+                        Roles
+                    </a>
+                </li>
+                <li>
+                    <a href="#permissions">
+                        <i class="fas fa-lock"></i>
+                        Permissions
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'asset_management' %}">
+                        <i class="fas fa-boxes"></i>
+                        Asset Management
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="main-content">
+            <h2>System Management Dashboard</h2>
+            <div class="dashboard-tiles">
+                <a href="{% url 'employee_management' %}" class="dashboard-tile">
+                    <i class="fas fa-users"></i>
+                    <h3>Employee Management</h3>
+                    <p>Manage employee information and access</p>
+                </a>
+                <a href="{% url 'department_management' %}" class="dashboard-tile">
+                    <i class="fas fa-building"></i>
+                    <h3>Department Management</h3>
+                    <p>Manage departments and their settings</p>
+                </a>
+                <a href="#roles" class="dashboard-tile">
+                    <i class="fas fa-id-badge"></i>
+                    <h3>Roles</h3>
+                    <p>Manage roles and responsibilities</p>
+                </a>
+                <a href="#permissions" class="dashboard-tile">
+                    <i class="fas fa-lock"></i>
+                    <h3>Permissions</h3>
+                    <p>Manage access permissions</p>
+                </a>
+                <a href="{% url 'asset_management' %}" class="dashboard-tile">
+                    <i class="fas fa-boxes"></i>
+                    <h3>Asset Management</h3>
+                    <p>Manage company assets and inventory</p>
+                </a>
+                <a href="{% url 'role_management' %}" class="dashboard-tile">
+                    <i class="fas fa-user-shield"></i>
+                    <h3>Role Management</h3>
+                    <p>Manage user roles and permissions</p>
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

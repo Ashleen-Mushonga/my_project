@@ -1,0 +1,240 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Department Management</title>
+    {% load static %}
+    <link rel="stylesheet" type="text/css" href="{% static 'myapp/css/style.css' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <style>
+        .system-layout {
+            display: flex;
+            min-height: calc(100vh - 80px);
+        }
+        
+        .main-content {
+            flex: 1;
+            padding: 20px;
+        }
+
+        .department-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .department-table th,
+        .department-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .department-table th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+
+        .department-table tr:hover {
+            background-color: #f5f5f5;
+        }
+
+        .btn {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 5px;
+        }
+
+        .btn-primary {
+            background-color: #3498db;
+            color: white;
+        }
+
+        .btn-edit {
+            background-color: #ffc107;
+            color: #000;
+        }
+
+        .btn-delete {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .btn-success {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 20px;
+            width: 70%;
+            max-width: 600px;
+            border-radius: 8px;
+            position: relative;
+        }
+
+        .close-modal {
+            position: absolute;
+            right: 20px;
+            top: 10px;
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .form-group input, 
+        .form-group textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-header">
+        <div class="user-info">
+            <h1>Department Management</h1>
+            <p class="user-details">{{ employee.name }} {{ employee.surname }} | {{ employee.department }}</p>
+        </div>
+        <div class="header-actions">
+            <a href="{% url 'system_management' %}" class="back-button">Back to System Management</a>
+            <button class="logout-button">Logout</button>
+        </div>
+    </div>
+
+    <div class="system-layout">
+        <div class="main-content">
+            {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                <div class="alert {% if message.tags %}alert-{{ message.tags }}{% endif %}">
+                    {{ message }}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <div class="content-header">
+                <button class="btn btn-primary" onclick="openDepartmentModal()">
+                    <i class="fas fa-plus"></i> Add Department
+                </button>
+            </div>
+
+            <table class="department-table">
+                <thead>
+                    <tr>
+                        <th>Code</th>
+                        <th>Name</th>
+                        <th>Description</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for dept in departments %}
+                    <tr {% if not dept.is_active %}style="opacity: 0.6;"{% endif %}>
+                        <td>{{ dept.code }}</td>
+                        <td>{{ dept.name }}</td>
+                        <td>{{ dept.description }}</td>
+                        <td>{{ dept.is_active|yesno:"Active,Inactive" }}</td>
+                        <td>
+                            <button class="btn btn-edit" onclick="editDepartment('{{ dept.id }}')">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn {% if dept.is_active %}btn-delete{% else %}btn-success{% endif %}" 
+                                    onclick="toggleDepartmentStatus('{{ dept.id }}', {{ dept.is_active|lower }})">
+                                <i class="fas {% if dept.is_active %}fa-ban{% else %}fa-check{% endif %}"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Add Department Modal -->
+    <div id="departmentModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeDepartmentModal()">&times;</span>
+            <h2>Add Department</h2>
+            <form action="{% url 'add_department' %}" method="POST">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="department_code">Department Code*</label>
+                    <input type="text" id="department_code" name="code" required>
+                </div>
+                <div class="form-group">
+                    <label for="department_name">Department Name*</label>
+                    <input type="text" id="department_name" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label for="department_description">Description</label>
+                    <textarea id="department_description" name="description" rows="3"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Create Department</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function openDepartmentModal() {
+            document.getElementById('departmentModal').style.display = 'block';
+        }
+
+        function closeDepartmentModal() {
+            document.getElementById('departmentModal').style.display = 'none';
+        }
+
+        function toggleDepartmentStatus(id, isActive) {
+            if (confirm(`Are you sure you want to ${isActive ? 'deactivate' : 'activate'} this department?`)) {
+                fetch(`/toggle-department-status/${id}/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    },
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        location.reload();
+                    } else {
+                        alert('Error updating department status');
+                    }
+                });
+            }
+        }
+
+        window.onclick = function(event) {
+            if (event.target == document.getElementById('departmentModal')) {
+                closeDepartmentModal();
+            }
+        }
+    </script>
+</body>
+</html>
