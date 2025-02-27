@@ -144,6 +144,33 @@
             <div class="detail-value">{{ movement.reason }}</div>
         </div>
 
+        <div class="movement-info-section">
+            <div class="detail-row">
+                <div class="detail-label">Status:</div>
+                <div class="detail-value">
+                    <span class="status-badge {{ movement.status|lower }}">
+                        {{ movement.get_status_display }}
+                    </span>
+                </div>
+            </div>
+
+            {% if movement.approver %}
+            <div class="detail-row">
+                <div class="detail-label">{% if movement.status == 'APPROVED' %}Approved{% else %}Rejected{% endif %} By:</div>
+                <div class="detail-value">
+                    {{ movement.approver.name }} {{ movement.approver.surname }}
+                </div>
+            </div>
+
+            <div class="detail-row">
+                <div class="detail-label">{% if movement.status == 'APPROVED' %}Approval{% else %}Rejection{% endif %} Date:</div>
+                <div class="detail-value">
+                    {{ movement.approval_date|date:"F j, Y, g:i a" }}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
         {% if movement.attachment %}
         <div class="attachment-section">
             <div class="detail-label">Attachment</div>

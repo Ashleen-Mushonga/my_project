@@ -171,6 +171,11 @@ class AssetMovement(models.Model):
         max_length=20, choices=STAGE_CHOICES, default='INITIATED')
     initiator = models.ForeignKey(
         Employee, on_delete=models.CASCADE, related_name='initiated_movements')
+    approver = models.ForeignKey(
+        Employee, on_delete=models.SET_NULL, null=True, blank=True, 
+        related_name='approved_movements',
+        help_text="Employee who approved or rejected this movement")
+    approval_date = models.DateTimeField(null=True, blank=True)
     attachment = models.FileField(upload_to='movement_attachments/', null=True, blank=True,
                                   help_text="Upload any relevant documents (e.g., transfer forms, repair reports)")
     created_at = models.DateTimeField(auto_now_add=True)

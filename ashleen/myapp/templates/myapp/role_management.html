@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -17,30 +16,316 @@
 
         .permission-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 10px;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
             margin-top: 15px;
         }
 
         .permission-item {
+            background: #f8f9fa;
+            padding: 8px 12px;
+            border-radius: 6px;
             display: flex;
             align-items: center;
             gap: 8px;
+            font-size: 0.9em;
+        }
+
+        .permission-item i {
+            color: #28a745;
+        }
+
+        .role-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 25px;
+            margin-top: 25px;
         }
 
         .role-card {
             background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+            transition: all 0.3s ease;
+            border: 1px solid #eee;
+        }
+
+        .role-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
         }
 
         .role-header {
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 15px;
+            margin-bottom: 15px;
+        }
+
+        .role-stats {
+            display: flex;
+            gap: 15px;
+            margin: 15px 0;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin: 15px -25px;
+            padding: 15px 25px;
+            border-top: 1px solid #eee;
+            border-bottom: 1px solid #eee;
+        }
+
+        .stat-item {
+            flex: 1;
+            text-align: center;
+            padding: 8px;
+        }
+
+        .stat-value {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .modal-content {
+            max-width: 800px;
+            width: 90%;
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 800px;
+            width: 90%;
+            margin: 40px auto;
+            position: relative;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+
+        .permission-group {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #e9ecef;
+        }
+
+        .permission-group h4 {
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+
+        .permission-checkbox-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 12px;
+            margin-top: 10px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid #e9ecef;
+        }
+
+        .checkbox-item:hover {
+            background: #f8f9fa;
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: #3498db;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-edit, .btn-delete, .btn-success {
+            padding: 6px 12px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .role-description {
+            color: #666;
+            font-size: 0.9em;
+            margin: 10px 0;
+        }
+
+        .search-box {
+            margin-bottom: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            width: 300px;
+            width: 100%;
+            max-width: 400px;
+            padding: 12px;
+            font-size: 14px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            transition: all 0.3s;
+        }
+
+        .search-box:focus {
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+            outline: none;
+        }
+
+        .content-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 15px;
+            margin-bottom: 30px;
+            margin-bottom: 40px;
+        }
+
+        .btn-primary {
+            background: #3498db;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 6px;
+            border: none;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .btn-primary:hover {
+            background: #2980b9;
+            transform: translateY(-1px);
+        }
+
+        .form-actions {
+            margin-top: 30px;
+            text-align: right;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-top: 5px;
+        }
+
+        /* Modal Improvements */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+
+        .close-modal {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+            transition: color 0.3s;
+        }
+
+        .close-modal:hover {
+            color: #dc3545;
+        }
+
+        /* Form Improvements */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #2c3e50;
+        }
+
+        .form-group input[type="text"],
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input[type="text"]:focus,
+        .form-group textarea:focus {
+            border-color: #3498db;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+
+        .employee-list {
+            max-height: 400px;
+            overflow-y: auto;
+            margin: 20px 0;
+            border: 1px solid #eee;
+            border-radius: 6px;
+        }
+        
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .table th, .table td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .table th {
+            background: #f8f9fa;
+            position: sticky;
+            top: 0;
+        }
+        
+        .role-actions {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+            text-align: right;
+        }
+        
+        .btn-assign {
+            background: #6c5ce7;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .btn-assign:hover {
+            background: #5b4acb;
+        }
+        
+        .employee-checkbox {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
         }
     </style>
 </head>
@@ -61,35 +346,59 @@
 
         <div class="main-content">
             <div class="content-header">
-                <h2>Role Management</h2>
+                <div>
+                    <h2>Role Management</h2>
+                    <p class="subtitle">Manage user roles and their permissions</p>
+                </div>
                 <button class="btn btn-primary" onclick="openRoleModal()">
                     <i class="fas fa-plus"></i> Add New Role
                 </button>
             </div>
 
-            <div class="role-list">
+            <input type="text" class="search-box" placeholder="Search roles..." onkeyup="searchRoles()">
+
+            <div class="role-cards">
                 {% for role in roles %}
-                <div class="role-card">
+                <div class="role-card" data-role-name="{{ role.name|lower }}">
                     <div class="role-header">
-                        <h3>{{ role.name }}</h3>
-                        <div class="action-buttons">
-                            <button class="btn btn-edit" onclick="editRole('{{ role.id }}')">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button class="btn {% if role.is_active %}btn-delete{% else %}btn-success{% endif %}" 
-                                    onclick="toggleRoleStatus('{{ role.id }}', {{ role.is_active|lower }})">
-                                <i class="fas {% if role.is_active %}fa-ban{% else %}fa-check{% endif %}"></i>
-                            </button>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h3>{{ role.name }}</h3>
+                            <div class="action-buttons">
+                                <button class="btn-edit" onclick="editRole('{{ role.id }}')">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn {% if role.is_active %}btn-delete{% else %}btn-success{% endif %}" 
+                                        onclick="toggleRoleStatus('{{ role.id }}', {{ role.is_active|lower }})">
+                                    <i class="fas {% if role.is_active %}fa-ban{% else %}fa-check{% endif %}"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <p class="role-description">{{ role.description }}</p>
+                    </div>
+
+                    <div class="role-stats">
+                        <div class="stat-item">
+                            <div class="stat-value">{{ role.permissions|length }}</div>
+                            <div class="stat-label">Permissions</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">{{ role.employee_set.count }}</div>
+                            <div class="stat-label">Users</div>
                         </div>
                     </div>
-                    <p>{{ role.description }}</p>
+
                     <div class="permission-grid">
-                        {% for perm in role.permissions.items %}
+                        {% for module, actions in role.permissions.items %}
                         <div class="permission-item">
                             <i class="fas fa-check-circle"></i>
-                            <span>{{ perm.0 }}: {{ perm.1|join:", " }}</span>
+                            <span>{{ module }}: {{ actions|join:", " }}</span>
                         </div>
                         {% endfor %}
+                    </div>
+                    <div class="role-actions">
+                        <button class="btn btn-assign" onclick="assignUsers('{{ role.id }}', '{{ role.name }}')">
+                            <i class="fas fa-user-plus"></i> Assign Users
+                        </button>
                     </div>
                 </div>
                 {% endfor %}
@@ -132,40 +441,233 @@
                     </form>
                 </div>
             </div>
+
+            <!-- Add User Assignment Modal -->
+            <div id="assignUsersModal" class="modal">
+                <div class="modal-content">
+                    <span class="close-modal" onclick="closeAssignModal()">&times;</span>
+                    <h2>Assign Users to <span id="roleNameDisplay"></span></h2>
+                    <form action="{% url 'assign_users_to_role' %}" method="POST" id="assignUsersForm">
+                        {% csrf_token %}
+                        <input type="hidden" id="role_id" name="role_id">
+                        
+                        <div class="form-group">
+                            <label>Search Employees</label>
+                            <input type="text" id="employeeSearch" onkeyup="filterEmployees()" 
+                                   class="form-control" placeholder="Type to search...">
+                        </div>
+                        
+                        <div class="employee-list">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Select</th>
+                                        <th>Name</th>
+                                        <th>Department</th>
+                                        <th>Employee Number</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="employeeTableBody">
+                                    {% for emp in all_employees %}
+                                    <tr class="employee-row">
+                                        <td>
+                                            <input type="checkbox" name="employee_ids" value="{{ emp.id }}" 
+                                                   class="employee-checkbox" id="emp_{{ emp.id }}">
+                                        </td>
+                                        <td>{{ emp.name }} {{ emp.surname }}</td>
+                                        <td>{{ emp.department.name }}</td>
+                                        <td>{{ emp.employee_number }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">Assign Selected Users</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Add Edit Role Modal -->
+            <div id="editRoleModal" class="modal">
+                <div class="modal-content">
+                    <span class="close-modal" onclick="closeEditRoleModal()">&times;</span>
+                    <h2>Edit Role</h2>
+                    <form action="" method="POST" id="editRoleForm">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <label for="edit_role_name">Role Name*</label>
+                            <input type="text" id="edit_role_name" name="name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit_role_description">Description</label>
+                            <textarea id="edit_role_description" name="description" rows="3"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Permissions</label>
+                            <div class="permission-grid" id="edit_permissions_grid">
+                                {% for module, actions in available_permissions.items %}
+                                <div class="permission-group">
+                                    <h4>{{ module }}</h4>
+                                    {% for action in actions %}
+                                    <div class="permission-item">
+                                        <input type="checkbox" name="permissions" value="{{ module }}_{{ action }}" 
+                                               id="edit_{{ module }}_{{ action }}">
+                                        <label>{{ action }}</label>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">Update Role</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Clean up the script section -->
+            <script>
+                function openRoleModal() {
+                    document.getElementById('roleModal').style.display = 'block';
+                }
+
+                function closeRoleModal() {
+                    document.getElementById('roleModal').style.display = 'none';
+                }
+
+                function editRole(roleId) {
+                    // Get the role data
+                    fetch(`/get-role-data/${roleId}/`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.status === 'success') {
+                                const role = data.role;
+                                
+                                // Set form action
+                                const form = document.getElementById('editRoleForm');
+                                form.action = `/edit-role/${roleId}/`;
+                                
+                                // Fill in form values
+                                document.getElementById('edit_role_name').value = role.name;
+                                document.getElementById('edit_role_description').value = role.description;
+                                
+                                // Reset all checkboxes first
+                                const checkboxes = document.querySelectorAll('#edit_permissions_grid input[type="checkbox"]');
+                                checkboxes.forEach(cb => {
+                                    cb.checked = false;
+                                });
+                                
+                                // Check the appropriate permissions
+                                role.permissions.forEach(perm => {
+                                    const checkbox = document.getElementById(`edit_${perm}`);
+                                    if (checkbox) checkbox.checked = true;
+                                });
+                                
+                                document.getElementById('editRoleModal').style.display = 'block';
+                            } else {
+                                alert('Error loading role data');
+                            }
+                        })
+                        .catch(error => {
+                            alert('Error fetching role data');
+                            console.error(error);
+                        });
+                }
+
+                function closeEditRoleModal() {
+                    document.getElementById('editRoleModal').style.display = 'none';
+                }
+
+                function toggleRoleStatus(roleId, isActive) {
+                    if (confirm(`Are you sure you want to ${isActive ? 'deactivate' : 'activate'} this role?`)) {
+                        fetch(`/toggle-role-status/${roleId}/`, {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                            },
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.status === 'success') {
+                                location.reload();
+                            } else {
+                                alert('Error updating role status');
+                            }
+                        });
+                    }
+                }
+
+                function searchRoles() {
+                    const searchInput = document.querySelector('.search-box').value.toLowerCase();
+                    const roleCards = document.querySelectorAll('.role-card');
+
+                    roleCards.forEach(card => {
+                        const roleName = card.dataset.roleName;
+                        if (roleName.includes(searchInput)) {
+                            card.style.display = 'block';
+                        } else {
+                            card.style.display = 'none';
+                        }
+                    });
+                }
+
+                function assignUsers(roleId, roleName) {
+                    document.getElementById('roleNameDisplay').textContent = roleName;
+                    document.getElementById('role_id').value = roleId;
+                    
+                    // Clear previous selections
+                    const checkboxes = document.querySelectorAll('.employee-checkbox');
+                    checkboxes.forEach(cb => { cb.checked = false; });
+                    
+                    // Check boxes for employees that already have this role
+                    fetch(`/get-role-users/${roleId}/`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.status === 'success') {
+                                data.employees.forEach(empId => {
+                                    const checkbox = document.getElementById(`emp_${empId}`);
+                                    if (checkbox) checkbox.checked = true;
+                                });
+                            }
+                        });
+                        
+                    document.getElementById('assignUsersModal').style.display = 'block';
+                }
+                
+                function closeAssignModal() {
+                    document.getElementById('assignUsersModal').style.display = 'none';
+                }
+                
+                function filterEmployees() {
+                    const input = document.getElementById('employeeSearch').value.toLowerCase();
+                    const rows = document.getElementsByClassName('employee-row');
+                    
+                    for (let i = 0; i < rows.length; i++) {
+                        const text = rows[i].textContent.toLowerCase();
+                        rows[i].style.display = text.includes(input) ? '' : 'none';
+                    }
+                }
+                
+                // Update window.onclick to handle all modals
+                window.onclick = function(event) {
+                    const roleModal = document.getElementById('roleModal');
+                    const editRoleModal = document.getElementById('editRoleModal');
+                    const assignModal = document.getElementById('assignUsersModal');
+                    
+                    if (event.target == roleModal) {
+                        closeRoleModal();
+                    } else if (event.target == editRoleModal) {
+                        closeEditRoleModal();
+                    } else if (event.target == assignModal) {
+                        closeAssignModal();
+                    }
+                }
+            </script>
         </div>
     </div>
-
-    <script>
-        function openRoleModal() {
-            document.getElementById('roleModal').style.display = 'block';
-        }
-
-        function closeRoleModal() {
-            document.getElementById('roleModal').style.display = 'none';
-        }
-
-        function editRole(roleId) {
-            // Implementation for editing role
-        }
-
-        function toggleRoleStatus(roleId, isActive) {
-            if (confirm(`Are you sure you want to ${isActive ? 'deactivate' : 'activate'} this role?`)) {
-                fetch(`/toggle-role-status/${roleId}/`, {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                    },
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        location.reload();
-                    } else {
-                        alert('Error updating role status');
-                    }
-                });
-            }
-        }
-    </script>
 </body>
 </html>

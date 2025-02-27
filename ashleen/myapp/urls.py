@@ -36,5 +36,13 @@ urlpatterns = [
     path('movement-details/<int:movement_id>/',
          views.movement_details, name='movement_details'),
     path('movement-approvals/', views.movement_approvals, name='movement_approvals'),
+    path('movement-history/', views.movement_history, name='movement_history'),
     path('it-management/', views.it_management, name='it_management'),
+    path('role-management/', views.role_management, name='role_management'),
+    path('add-role/', views.add_role, name='add_role'),
+    path('edit-role/<int:role_id>/', views.edit_role, name='edit_role'),
+    path('get-role-data/<int:role_id>/', views.get_role_data, name='get_role_data'),
+    path('toggle-role-status/<int:role_id>/', views.toggle_role_status, name='toggle_role_status'),
+    path('get-role-users/<int:role_id>/', views.get_role_users, name='get_role_users'),
+    path('assign-users-to-role/', views.assign_users_to_role, name='assign_users_to_role'),
 ]
