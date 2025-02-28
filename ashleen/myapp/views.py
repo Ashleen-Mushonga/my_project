@@ -8,10 +8,6 @@ from django.db import IntegrityError
 from django.utils import timezone
 
 
-def hello_world(request):
-    return HttpResponse("Hello, World!")
-
-
 def login(request):
     if request.method == 'POST':
         password = request.POST.get('password')
