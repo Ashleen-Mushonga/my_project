@@ -10,6 +10,7 @@ from django.utils import timezone
 
 def login(request):
     if request.method == 'POST':
+        employee_number = request.POST.get('employee_number')  # Add this line to get employee_number from POST data
         password = request.POST.get('password')
 
         try:
