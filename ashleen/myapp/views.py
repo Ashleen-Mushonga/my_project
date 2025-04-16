@@ -2,15 +2,17 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.hashers import check_password, make_password
 # Update imports to include Role
-from .models import Employee, Module, Department, Asset, AssetMovement, Role
+from .models import Employee, Module, Department, Asset, AssetMovement, Role, AssetMaintenance
 from django.http import HttpResponse, JsonResponse
 from django.db import IntegrityError
 from django.utils import timezone
+import random
+from datetime import datetime
 
 
 def login(request):
     if request.method == 'POST':
-        employee_number = request.POST.get('employee_number')  # Add this line to get employee_number from POST data
+        employee_number = request.POST.get('employee_number')
         password = request.POST.get('password')
 
         try:
@@ -28,6 +30,35 @@ def login(request):
             messages.error(request, 'Invalid credentials')
 
     return render(request, 'myapp/login.html')
+
+
+def logout(request):
+    if 'employee_id' in request.session:
+        del request.session['employee_id']
+    return redirect('login')
+
+
+def forgot_password(request):
+    if request.method == 'POST':
+        employee_number = request.POST.get('employee_number')
+        try:
+            employee = Employee.objects.get(employee_number=employee_number)
+            # Generate a temporary password
+            temp_password = ''.join(random.choices(
+                'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', k=12))
+            employee.password = make_password(temp_password)
+            employee.is_first_login = True
+            employee.save()
+
+            # Here you would typically send the temporary password via email
+            # For now, we'll just show it in a message
+            messages.success(
+                request, f'Your temporary password is: {temp_password}. Please change it after logging in.')
+            return redirect('login')
+        except Employee.DoesNotExist:
+            messages.error(request, 'Employee number not found')
+
+    return render(request, 'myapp/forgot_password.html')
 
 
 def reset_password(request):
@@ -68,9 +99,25 @@ def system_management_home(request):
         return redirect('login')
 
     employee = Employee.objects.get(id=request.session['employee_id'])
-    return render(request, 'myapp/system_management_home.html', {
-        'employee': employee
-    })
+
+    # Get real-time statistics
+    context = {
+        'employee': employee,
+        'employees': {
+            'count': Employee.objects.filter(is_active=True).count()
+        },
+        'departments': {
+            'count': Department.objects.filter(is_active=True).count()
+        },
+        'roles': {
+            'count': Role.objects.filter(is_active=True).count()
+        },
+        'assets': {
+            'count': Asset.objects.filter(is_deleted=False).count()
+        }
+    }
+
+    return render(request, 'myapp/system_management_home.html', context)
 
 
 def employee_management(request):
@@ -681,3 +728,174 @@ def movement_history(request):
             'rejected': AssetMovement.objects.filter(status='REJECTED').count(),
         }
     })
+
+
+def schedule_maintenance(request):
+    if request.method == 'POST':
+        try:
+            # Check if user is authenticated
+            if 'employee_id' not in request.session:
+                return JsonResponse({
+                    'status': 'error',
+                    'message': 'User not authenticated'
+                }, status=401)
+
+            employee = Employee.objects.get(id=request.session['employee_id'])
+
+            # Get and validate required fields
+            asset_id = request.POST.get('asset_id')
+            if not asset_id:
+                return JsonResponse({
+                    'status': 'error',
+                    'message': 'Asset ID is required'
+                }, status=400)
+
+            scheduled_date_str = request.POST.get('scheduled_date')
+            if not scheduled_date_str:
+                return JsonResponse({
+                    'status': 'error',
+                    'message': 'Scheduled date is required'
+                }, status=400)
+
+            try:
+                scheduled_date = datetime.strptime(
+                    scheduled_date_str, '%Y-%m-%d').date()
+            except ValueError:
+                return JsonResponse({
+                    'status': 'error',
+                    'message': 'Invalid date format. Please use YYYY-MM-DD format.'
+                }, status=400)
+
+            description = request.POST.get('description')
+            if not description:
+                return JsonResponse({
+                    'status': 'error',
+                    'message': 'Description is required'
+                }, status=400)
+
+            maintenance_type = request.POST.get('maintenance_type')
+            if not maintenance_type:
+                return JsonResponse({
+                    'status': 'error',
+                    'message': 'Maintenance type is required'
+                }, status=400)
+
+            technician = request.POST.get('technician')
+            if not technician:
+                return JsonResponse({
+                    'status': 'error',
+                    'message': 'Technician is required'
+                }, status=400)
+
+            # Get optional fields
+            estimated_cost = request.POST.get('estimated_cost')
+            if estimated_cost:
+                try:
+                    estimated_cost = float(estimated_cost)
+                except ValueError:
+                    return JsonResponse({
+                        'status': 'error',
+                        'message': 'Invalid estimated cost format'
+                    }, status=400)
+
+            # Create the maintenance record
+            maintenance = AssetMaintenance.objects.create(
+                asset_id=asset_id,
+                scheduled_date=scheduled_date,
+                description=description,
+                maintenance_type=maintenance_type,
+                estimated_cost=estimated_cost,
+                technician=technician,
+                created_by=employee
+            )
+
+            return JsonResponse({
+                'status': 'success',
+                'message': 'Maintenance scheduled successfully',
+                'maintenance': {
+                    'id': maintenance.id,
+                    'scheduled_date': maintenance.scheduled_date.strftime('%Y-%m-%d'),
+                    'status': maintenance.get_status_display()
+                }
+            })
+        except Employee.DoesNotExist:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Employee not found'
+            }, status=404)
+        except Exception as e:
+            return JsonResponse({
+                'status': 'error',
+                'message': f'Error scheduling maintenance: {str(e)}'
+            }, status=400)
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=405)
+
+
+def update_maintenance_status(request, maintenance_id):
+    if request.method == 'POST':
+        try:
+            maintenance = AssetMaintenance.objects.get(id=maintenance_id)
+            new_status = request.POST.get('status')
+
+            if new_status not in dict(AssetMaintenance.MAINTENANCE_STATUS):
+                return JsonResponse({
+                    'status': 'error',
+                    'message': 'Invalid maintenance status'
+                }, status=400)
+
+            maintenance.status = new_status
+            if new_status == 'COMPLETED':
+                maintenance.completion_date = timezone.now().date()
+                maintenance.completion_notes = request.POST.get(
+                    'completion_notes', '')
+            maintenance.save()
+
+            return JsonResponse({
+                'status': 'success',
+                'message': 'Maintenance status updated successfully'
+            })
+        except AssetMaintenance.DoesNotExist:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Maintenance schedule not found'
+            }, status=404)
+        except Exception as e:
+            return JsonResponse({
+                'status': 'error',
+                'message': f'Error updating maintenance status: {str(e)}'
+            }, status=400)
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=405)
+
+
+def get_asset_maintenance_history(request, asset_id):
+    try:
+        if asset_id == 'all':
+            # Get all maintenance records
+            maintenance_records = AssetMaintenance.objects.select_related(
+                'asset').all()
+        else:
+            # Get maintenance records for a specific asset
+            maintenance_records = AssetMaintenance.objects.select_related(
+                'asset').filter(asset_id=asset_id)
+
+        records = [{
+            'id': record.id,
+            'asset_name': record.asset.name if record.asset else '-',
+            'maintenance_type': record.maintenance_type,
+            'scheduled_date': record.scheduled_date.strftime('%Y-%m-%d'),
+            'technician': record.technician,
+            'status': record.status,
+            'estimated_cost': float(record.estimated_cost) if record.estimated_cost else None,
+            'completion_date': record.completion_date.strftime('%Y-%m-%d') if record.completion_date else None,
+            'completion_notes': record.completion_notes
+        } for record in maintenance_records]
+
+        return JsonResponse({
+            'status': 'success',
+            'maintenance_records': records
+        })
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        }, status=400)

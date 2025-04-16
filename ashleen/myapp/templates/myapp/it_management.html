@@ -326,6 +326,132 @@
             color: white;
             box-shadow: 0 2px 4px rgba(52, 152, 219, 0.3);
         }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .stat-card .stat-title {
+            color: #7f8c8d;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+
+        .stat-card .stat-value {
+            color: #2c3e50;
+            font-size: 2em;
+            font-weight: 600;
+        }
+
+        .stat-card .stat-icon {
+            float: right;
+            font-size: 2.5em;
+            color: #3498db;
+            opacity: 0.2;
+        }
+
+        .maintenance-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            font-size: 1.2em;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        .maintenance-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        .maintenance-table th {
+            background-color: #f8f9fa;
+            padding: 12px 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #2c3e50;
+            border-bottom: 2px solid #eee;
+        }
+
+        .maintenance-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .maintenance-table tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 500;
+            display: inline-block;
+        }
+
+        .status-scheduled {
+            background-color: #ffeaa7;
+            color: #d35400;
+        }
+
+        .status-in-progress {
+            background-color: #81ecec;
+            color: #00838f;
+        }
+
+        .status-completed {
+            background-color: #e1f7e1;
+            color: #27ae60;
+        }
+
+        .status-cancelled {
+            background-color: #fde8e8;
+            color: #dc3545;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-schedule {
+            background-color: #3498db;
+            color: white;
+        }
+
+        .btn-schedule:hover {
+            background-color: #2980b9;
+        }
+
+        .filter-section {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .filter-section select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            min-width: 150px;
+        }
     </style>
 </head>
 <body>
@@ -378,7 +504,7 @@
                 <i class="fas fa-file-export"></i>
                 Export Asset List
             </button>
-            <button class="action-button">
+            <button class="action-button" onclick="openMaintenanceModal()">
                 <i class="fas fa-tools"></i>
                 Schedule Maintenance
             </button>
@@ -434,7 +560,7 @@
                         <button class="btn btn-info btn-sm" onclick="editAsset('{{ asset.id }}')">
                             <i class="fas fa-edit"></i>
                         </button>
-                        <button class="btn btn-warning btn-sm">
+                        <button class="btn btn-warning btn-sm" onclick="openMaintenanceModal('{{ asset.id }}')">
                             <i class="fas fa-tools"></i>
                         </button>
                     </td>
@@ -444,6 +570,42 @@
                     <td colspan="9" class="text-center">No assets found.</td>
                 </tr>
                 {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Maintenance Section -->
+        <div class="section-header">
+            <h2>Maintenance Records</h2>
+            <div class="filter-section">
+                <select id="statusFilter" onchange="filterMaintenance()">
+                    <option value="">All Statuses</option>
+                    <option value="SCHEDULED">Scheduled</option>
+                    <option value="IN_PROGRESS">In Progress</option>
+                    <option value="COMPLETED">Completed</option>
+                    <option value="CANCELLED">Cancelled</option>
+                </select>
+                <select id="assetFilter" onchange="filterMaintenance()">
+                    <option value="">All Assets</option>
+                    {% for asset in assets %}
+                        <option value="{{ asset.id }}">{{ asset.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <table class="maintenance-table">
+            <thead>
+                <tr>
+                    <th>Asset</th>
+                    <th>Type</th>
+                    <th>Scheduled Date</th>
+                    <th>Technician</th>
+                    <th>Status</th>
+                    <th>Estimated Cost</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="maintenanceTableBody">
+                <!-- Maintenance records will be loaded here -->
             </tbody>
         </table>
     </div>
@@ -649,6 +811,58 @@
         </div>
     </div>
 
+    <!-- Maintenance Modal -->
+    <div id="maintenanceModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Schedule Maintenance</h2>
+                <span class="close-modal" onclick="closeMaintenanceModal()">&times;</span>
+            </div>
+            <form id="maintenanceForm" onsubmit="scheduleMaintenance(event)">
+                {% csrf_token %}
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="asset">Asset</label>
+                        <select id="asset" name="asset_id" required>
+                            {% for asset in assets %}
+                                <option value="{{ asset.id }}">{{ asset.name }} ({{ asset.asset_number }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="maintenance_type">Maintenance Type</label>
+                        <select id="maintenance_type" name="maintenance_type" required>
+                            <option value="PREVENTIVE">Preventive Maintenance</option>
+                            <option value="CORRECTIVE">Corrective Maintenance</option>
+                            <option value="INSPECTION">Inspection</option>
+                            <option value="UPGRADE">Upgrade/Update</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="scheduled_date">Scheduled Date</label>
+                        <input type="date" id="scheduled_date" name="scheduled_date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="technician">Technician</label>
+                        <input type="text" id="technician" name="technician" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="estimated_cost">Estimated Cost</label>
+                        <input type="number" id="estimated_cost" name="estimated_cost" step="0.01">
+                    </div>
+                    <div class="form-group full-width">
+                        <label for="description">Description</label>
+                        <textarea id="description" name="description" rows="3" required></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn-cancel" onclick="closeMaintenanceModal()">Cancel</button>
+                        <button type="submit" class="btn-primary">Schedule Maintenance</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
         function openAddAssetModal() {
             const modal = document.getElementById('addAssetModal');
@@ -713,6 +927,201 @@
                 document.getElementById('category').value = this.dataset.category;
             });
         });
+
+        // Load maintenance records when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            loadMaintenanceRecords();
+        });
+
+        function loadMaintenanceRecords() {
+            // Safely get filter values
+            const statusFilter = document.getElementById('statusFilter')?.value || '';
+            const assetFilter = document.getElementById('assetFilter')?.value || '';
+
+            // Fetch all maintenance records
+            fetch(`/get-asset-maintenance-history/${assetFilter || 'all'}/`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        const tbody = document.getElementById('maintenanceTableBody');
+                        if (!tbody) {
+                            console.error('Maintenance table body not found');
+                            return;
+                        }
+                        
+                        tbody.innerHTML = '';
+                        
+                        data.maintenance_records
+                            .filter(record => !statusFilter || record.status.toUpperCase() === statusFilter)
+                            .forEach(record => {
+                                const row = document.createElement('tr');
+                                row.innerHTML = `
+                                    <td>${record.asset_name || '-'}</td>
+                                    <td>${record.maintenance_type || '-'}</td>
+                                    <td>${record.scheduled_date || '-'}</td>
+                                    <td>${record.technician || '-'}</td>
+                                    <td>
+                                        <span class="status-badge status-${(record.status || '').toLowerCase().replace('_', '-')}">
+                                            ${record.status || '-'}
+                                        </span>
+                                    </td>
+                                    <td>${record.estimated_cost ? '$' + record.estimated_cost.toFixed(2) : '-'}</td>
+                                    <td>
+                                        ${getActionButtons(record)}
+                                    </td>
+                                `;
+                                tbody.appendChild(row);
+                            });
+                    } else {
+                        console.error('Error loading maintenance records:', data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading maintenance records:', error);
+                    const tbody = document.getElementById('maintenanceTableBody');
+                    if (tbody) {
+                        tbody.innerHTML = '<tr><td colspan="7" class="text-center">Error loading maintenance records</td></tr>';
+                    }
+                });
+        }
+
+        function getActionButtons(record) {
+            if (record.status === 'SCHEDULED') {
+                return `
+                    <div class="action-buttons">
+                        <button class="btn-primary" onclick="updateMaintenanceStatus(${record.id}, 'IN_PROGRESS')">
+                            Start
+                        </button>
+                        <button class="btn-delete" onclick="updateMaintenanceStatus(${record.id}, 'CANCELLED')">
+                            Cancel
+                        </button>
+                    </div>
+                `;
+            } else if (record.status === 'IN_PROGRESS') {
+                return `
+                    <button class="btn-primary" onclick="updateMaintenanceStatus(${record.id}, 'COMPLETED')">
+                        Complete
+                    </button>
+                `;
+            }
+            return '-';
+        }
+
+        function filterMaintenance() {
+            loadMaintenanceRecords();
+        }
+
+        function openMaintenanceModal(assetId = null) {
+            const modal = document.getElementById('maintenanceModal');
+            modal.style.display = 'block';
+            document.body.style.overflow = 'hidden';
+            
+            // Reset form
+            const form = document.getElementById('maintenanceForm');
+            form.reset();
+            
+            // If an asset ID is provided, select that asset in the dropdown
+            if (assetId) {
+                const assetSelect = document.getElementById('asset');
+                assetSelect.value = assetId;
+            }
+            
+            // Set default scheduled date to tomorrow
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            document.getElementById('scheduled_date').value = tomorrow.toISOString().split('T')[0];
+        }
+
+        function closeMaintenanceModal() {
+            document.getElementById('maintenanceModal').style.display = 'none';
+            document.getElementById('maintenanceForm').reset();
+        }
+
+        function scheduleMaintenance(event) {
+            event.preventDefault();
+            const form = event.target;
+            const formData = new FormData(form);
+
+            // Show loading state
+            const submitButton = form.querySelector('button[type="submit"]');
+            const originalText = submitButton.textContent;
+            submitButton.disabled = true;
+            submitButton.textContent = 'Scheduling...';
+
+            fetch('{% url "schedule_maintenance" %}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(data => {
+                        throw new Error(data.message || 'Error scheduling maintenance');
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.status === 'success') {
+                    alert('Maintenance scheduled successfully');
+                    closeMaintenanceModal();
+                    loadMaintenanceRecords();
+                } else {
+                    throw new Error(data.message || 'Error scheduling maintenance');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert(error.message || 'Error scheduling maintenance. Please check the console for details.');
+            })
+            .finally(() => {
+                // Reset button state
+                submitButton.disabled = false;
+                submitButton.textContent = originalText;
+            });
+        }
+
+        function updateMaintenanceStatus(maintenanceId, status) {
+            const formData = new FormData();
+            formData.append('status', status);
+            
+            if (status === 'COMPLETED') {
+                const notes = prompt('Enter completion notes (optional):');
+                if (notes !== null) {
+                    formData.append('completion_notes', notes);
+                }
+            }
+
+            fetch(`/update-maintenance-status/${maintenanceId}/`, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alert('Maintenance status updated successfully');
+                    loadMaintenanceRecords();
+                } else {
+                    alert(data.message || 'Error updating maintenance status');
+                }
+            })
+            .catch(error => {
+                alert('Error updating maintenance status');
+                console.error('Error:', error);
+            });
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            if (event.target.className === 'modal') {
+                event.target.style.display = 'none';
+            }
+        }
     </script>
 </body>
 </html> 

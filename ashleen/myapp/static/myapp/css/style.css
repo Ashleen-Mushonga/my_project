@@ -218,3 +218,23 @@ body {
     color: #666;
     margin: 0;
 }
+
+.forgot-password,
+.back-to-login {
+    text-align: center;
+    margin-top: 15px;
+}
+
+.forgot-password a,
+.back-to-login a {
+    color: #666;
+    text-decoration: none;
+    font-size: 14px;
+    transition: color 0.3s;
+}
+
+.forgot-password a:hover,
+.back-to-login a:hover {
+    color: #4CAF50;
+    text-decoration: underline;
+}

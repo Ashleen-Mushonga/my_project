@@ -3,6 +3,8 @@ from . import views
 
 urlpatterns = [
     path('', views.login, name='login'),
+    path('logout/', views.logout, name='logout'),
+    path('forgot-password/', views.forgot_password, name='forgot_password'),
     path('reset-password/', views.reset_password, name='reset_password'),
     path('dashboard/', views.dashboard, name='dashboard'),
     path('system-management/', views.system_management_home,
@@ -50,4 +52,10 @@ urlpatterns = [
          views.get_role_users, name='get_role_users'),
     path('assign-users-to-role/', views.assign_users_to_role,
          name='assign_users_to_role'),
+    path('schedule-maintenance/', views.schedule_maintenance,
+         name='schedule_maintenance'),
+    path('update-maintenance-status/<int:maintenance_id>/',
+         views.update_maintenance_status, name='update_maintenance_status'),
+    path('get-asset-maintenance-history/<str:asset_id>/',
+         views.get_asset_maintenance_history, name='get_asset_maintenance_history'),
 ]

@@ -172,7 +172,7 @@ class AssetMovement(models.Model):
     initiator = models.ForeignKey(
         Employee, on_delete=models.CASCADE, related_name='initiated_movements')
     approver = models.ForeignKey(
-        Employee, on_delete=models.SET_NULL, null=True, blank=True, 
+        Employee, on_delete=models.SET_NULL, null=True, blank=True,
         related_name='approved_movements',
         help_text="Employee who approved or rejected this movement")
     approval_date = models.DateTimeField(null=True, blank=True)
@@ -186,3 +186,35 @@ class AssetMovement(models.Model):
 
     def __str__(self):
         return f"{self.get_movement_type_display()} - {self.asset.name}"
+
+
+class AssetMaintenance(models.Model):
+    MAINTENANCE_STATUS = (
+        ('SCHEDULED', 'Scheduled'),
+        ('IN_PROGRESS', 'In Progress'),
+        ('COMPLETED', 'Completed'),
+        ('CANCELLED', 'Cancelled')
+    )
+
+    asset = models.ForeignKey(
+        'Asset', on_delete=models.CASCADE, related_name='maintenance_schedules')
+    scheduled_date = models.DateField()
+    description = models.TextField()
+    maintenance_type = models.CharField(max_length=100)
+    estimated_cost = models.DecimalField(
+        max_digits=10, decimal_places=2, null=True, blank=True)
+    status = models.CharField(
+        max_length=20, choices=MAINTENANCE_STATUS, default='SCHEDULED')
+    technician = models.CharField(max_length=100, null=True, blank=True)
+    completion_date = models.DateField(null=True, blank=True)
+    completion_notes = models.TextField(null=True, blank=True)
+    created_by = models.ForeignKey(
+        'Employee', on_delete=models.SET_NULL, null=True, related_name='maintenance_created')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-scheduled_date']
+
+    def __str__(self):
+        return f"Maintenance for {self.asset.name} on {self.scheduled_date}"
