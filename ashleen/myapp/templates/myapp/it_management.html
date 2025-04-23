@@ -1,678 +1,223 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>IT Management</title>
-    {% load static %}
-    <link rel="stylesheet" type="text/css" href="{% static 'myapp/css/style.css' %}">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
-    <style>
-             /* Base Styles */
-             body {
-                margin: 0;
-                padding: 0;
-                background-color: #f8f9fa;
-                min-height: 100vh;
-            }
-        
-            .dashboard-container {
-                padding: 20px;
-                max-width: 1400px;
-                margin: 0 auto;
-            }
-        .dashboard-header {
-            background-color: white;
-            padding: 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-        }
-        
-        .user-info h1 {
-            margin: 0;
-            color: #2c3e50;
-            font-size: 24px;
-        }
-        
-        .user-details {
-            color: #7f8c8d;
-            margin: 5px 0 0;
-        }
-        
-        .header-actions {
-            display: flex;
-            gap: 10px;
-        }
-        
-        .back-button,
-        .logout-button {
-            padding: 8px 16px;
-            border-radius: 4px;
-            text-decoration: none;
-            font-size: 14px;
-            transition: all 0.3s ease;
-        }
-        
-        .back-button {
-            background-color: #95a5a6;
-            color: white;
-        }
-        
-        .logout-button {
-            background-color: #e74c3c;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-        
-        .btn {
-            padding: 8px 16px;
-            border-radius: 4px;
-            border: none;
-            cursor: pointer;
-            font-size: 14px;
-            transition: all 0.3s ease;
-        }
-        
-        .btn-primary {
-            background-color: #3498db;
-            color: white;
-        }
-        
-        .btn-secondary {
-            background-color: #95a5a6;
-            color: white;
-        }
-        
-        .btn-sm {
-            padding: 4px 8px;
-            font-size: 12px;
-        }
-        
-        .btn-info {
-            background-color: #3498db;
-            color: white;
-        }
-        
-        .btn-warning {
-            background-color: #f1c40f;
-            color: white;
-        }
-        
-        /* Modal Base */
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            overflow-y: auto;
-        }
-        
-        .modal-content {
-            background-color: #fefefe;
-            margin: 2% auto;
-            padding: 20px;
-            border-radius: 8px;
-            width: 80%;
-            max-width: 900px;
-            position: relative;
-        }
-        
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid #eee;
-        }
-        
-        .close-modal {
-            font-size: 24px;
-            cursor: pointer;
-            color: #95a5a6;
-        }
-        
-        /* Form Elements */
-        .form-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 20px;
-        }
-        
-        .form-group {
-            margin-bottom: 15px;
-        }
-        
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 500;
-        }
-        
-        .form-group input,
-        .form-group select,
-        .form-group textarea {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
+{% extends 'myapp/base.html' %}
+{% load static %}
 
-        /* IT Management specific styles */
-        .it-dashboard {
-            padding: 20px;
-            background: #f8f9fa;
-            border-radius: 8px;
-        }
+{% block title %}IT Asset Management{% endblock %}
 
-        .it-stats {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 20px;
-            margin-bottom: 30px;
-        }
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">IT Asset Management</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+        <li class="breadcrumb-item active">IT Asset Management</li>
+    </ol>
 
-        .stat-card {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        .stat-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-        }
-
-        .stat-card h3 {
-            margin: 0;
-            color: #2c3e50;
-            font-size: 14px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .stat-card .value {
-            font-size: 28px;
-            font-weight: bold;
-            color: #3498db;
-            margin: 10px 0;
-        }
-
-        .stat-card .icon {
-            font-size: 24px;
-            color: #bdc3c7;
-            margin-bottom: 15px;
-        }
-
-        /* Quick Actions Section */
-        .quick-actions {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin: 20px 0;
-        }
-
-        .action-button {
-            display: flex;
-            align-items: center;
-            padding: 15px;
-            background: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        .action-button:hover {
-            background: #3498db;
-            color: white;
-            transform: translateY(-2px);
-        }
-
-        .action-button i {
-            margin-right: 10px;
-            font-size: 18px;
-        }
-
-        /* Asset Table Improvements */
-        .asset-table {
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            margin-top: 20px;
-        }
-
-        .asset-table th {
-            background: #f8f9fa;
-            padding: 15px;
-            font-weight: 600;
-            color: #2c3e50;
-        }
-
-        .asset-table td {
-            padding: 12px 15px;
-            vertical-align: middle;
-        }
-
-        .status-badge {
-            padding: 5px 10px;
-            border-radius: 15px;
-            font-size: 12px;
-            font-weight: 500;
-        }
-
-        .status-active {
-            background: #e8f5e9;
-            color: #2e7d32;
-        }
-
-        .status-inactive {
-            background: #ffebee;
-            color: #c62828;
-        }
-
-        /* Section Headers */
-        .section-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin: 30px 0 20px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #e9ecef;
-        }
-
-        .section-header h2 {
-            margin: 0;
-            color: #2c3e50;
-            font-size: 20px;
-            font-weight: 600;
-        }
-
-        .btn-group {
-            display: flex;
-            gap: 10px;
-        }
-
-        .asset-category {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin-top: 8px;
-        }
-
-        .category-tag {
-            padding: 8px 16px;
-            background-color: #f0f2f5;
-            border-radius: 20px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-size: 14px;
-            user-select: none;
-        }
-
-        .category-tag:hover {
-            background-color: #e2e6ea;
-            transform: translateY(-2px);
-        }
-
-        .category-tag.selected {
-            background-color: #3498db;
-            color: white;
-            box-shadow: 0 2px 4px rgba(52, 152, 219, 0.3);
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .stat-card {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        .stat-card .stat-title {
-            color: #7f8c8d;
-            font-size: 0.9em;
-            margin-bottom: 10px;
-        }
-
-        .stat-card .stat-value {
-            color: #2c3e50;
-            font-size: 2em;
-            font-weight: 600;
-        }
-
-        .stat-card .stat-icon {
-            float: right;
-            font-size: 2.5em;
-            color: #3498db;
-            opacity: 0.2;
-        }
-
-        .maintenance-section {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            margin-bottom: 30px;
-        }
-
-        .section-title {
-            font-size: 1.2em;
-            color: #2c3e50;
-            font-weight: 600;
-        }
-
-        .maintenance-table {
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 0;
-        }
-
-        .maintenance-table th {
-            background-color: #f8f9fa;
-            padding: 12px 15px;
-            text-align: left;
-            font-weight: 600;
-            color: #2c3e50;
-            border-bottom: 2px solid #eee;
-        }
-
-        .maintenance-table td {
-            padding: 12px 15px;
-            border-bottom: 1px solid #eee;
-        }
-
-        .maintenance-table tr:hover {
-            background-color: #f8f9fa;
-        }
-
-        .status-badge {
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 0.85em;
-            font-weight: 500;
-            display: inline-block;
-        }
-
-        .status-scheduled {
-            background-color: #ffeaa7;
-            color: #d35400;
-        }
-
-        .status-in-progress {
-            background-color: #81ecec;
-            color: #00838f;
-        }
-
-        .status-completed {
-            background-color: #e1f7e1;
-            color: #27ae60;
-        }
-
-        .status-cancelled {
-            background-color: #fde8e8;
-            color: #dc3545;
-        }
-
-        .action-buttons {
-            display: flex;
-            gap: 8px;
-        }
-
-        .btn-schedule {
-            background-color: #3498db;
-            color: white;
-        }
-
-        .btn-schedule:hover {
-            background-color: #2980b9;
-        }
-
-        .filter-section {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-
-        .filter-section select {
-            padding: 8px 12px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            min-width: 150px;
-        }
-    </style>
-</head>
-<body>
-    <div class="dashboard-header">
-        <div class="user-info">
-            <h1>IT Asset Management</h1>
-            <p class="user-details">{{ employee.name }} {{ employee.surname }} | {{ employee.department }}</p>
+    <!-- Statistics Cards -->
+    <div class="row">
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-primary text-white mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h3 class="mb-0">{{ stats.total_count }}</h3>
+                            <div class="small">Total IT Assets</div>
+                        </div>
+                        <i class="fas fa-laptop fa-2x text-white-50"></i>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="header-actions">
-            <a href="{% url 'dashboard' %}" class="back-button">Back to Dashboard</a>
-            <button class="logout-button">Logout</button>
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-success text-white mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h3 class="mb-0">{{ stats.active_count }}</h3>
+                            <div class="small">Active Assets</div>
+                        </div>
+                        <i class="fas fa-check-circle fa-2x text-white-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-warning text-white mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h3 class="mb-0">{{ stats.maintenance_count }}</h3>
+                            <div class="small">Under Maintenance</div>
+                        </div>
+                        <i class="fas fa-tools fa-2x text-white-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-danger text-white mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h3 class="mb-0">{{ stats.retired_count }}</h3>
+                            <div class="small">Retired Assets</div>
+                        </div>
+                        <i class="fas fa-archive fa-2x text-white-50"></i>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div class="it-dashboard">
-        <!-- Stats Section -->
-        <div class="it-stats">
-            <div class="stat-card">
-                <i class="fas fa-laptop icon"></i>
-                <h3>Total IT Assets</h3>
-                <div class="value">{{ stats.total_count }}</div>
-            </div>
-            <div class="stat-card">
-                <i class="fas fa-check-circle icon"></i>
-                <h3>Active Assets</h3>
-                <div class="value">{{ stats.active_count }}</div>
-            </div>
-            <div class="stat-card">
-                <i class="fas fa-tools icon"></i>
-                <h3>Under Maintenance</h3>
-                <div class="value">{{ stats.maintenance_count }}</div>
-            </div>
-            <div class="stat-card">
-                <i class="fas fa-archive icon"></i>
-                <h3>Retired Assets</h3>
-                <div class="value">{{ stats.retired_count }}</div>
+    <!-- Quick Actions -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-bolt me-1"></i>
+                    Quick Actions
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <a href="#" class="btn btn-primary w-100" data-bs-toggle="modal" data-bs-target="#receiveAssetModal">
+                                <i class="fas fa-download me-2"></i> Receive IT Asset
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="{% url 'export_asset_list' %}" class="btn btn-secondary w-100">
+                                <i class="fas fa-file-export me-2"></i> Export Asset List
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="{% url 'maintenance_records' %}" class="btn btn-warning w-100">
+                                <i class="fas fa-tools me-2"></i> Schedule Maintenance
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <button onclick="printAssetReport()" class="btn btn-info w-100">
+                                <i class="fas fa-print me-2"></i> Print Report
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
+    </div>
 
-        <!-- Quick Actions -->
-        <div class="section-header">
-            <h2>Quick Actions</h2>
-        </div>
-        <div class="quick-actions">
-            <button class="action-button" onclick="openAddAssetModal()">
-                <i class="fas fa-truck-loading"></i>
-                Receive IT Asset
-            </button>
-            <button class="action-button">
-                <i class="fas fa-file-export"></i>
-                Export Asset List
-            </button>
-            <button class="action-button" onclick="openMaintenanceModal()">
-                <i class="fas fa-tools"></i>
-                Schedule Maintenance
-            </button>
-            <button class="action-button">
-                <i class="fas fa-print"></i>
-                Print Report
-            </button>
-        </div>
-
-        <!-- Assets Table Section -->
-        <div class="section-header">
-            <h2>Assets Overview</h2>
-            <div class="btn-group">
-                <button class="btn btn-primary" onclick="openAddAssetModal()">
-                    <i class="fas fa-truck-loading"></i> Receive Asset
+    <!-- Assets Overview -->
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <div>
+                <i class="fas fa-table me-1"></i>
+                Assets Overview
+            </div>
+            <div>
+                <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#receiveAssetModal">
+                    <i class="fas fa-plus"></i> Receive Asset
                 </button>
-                <button class="btn btn-secondary">
+                <button type="button" class="btn btn-secondary btn-sm ms-2">
                     <i class="fas fa-filter"></i> Filter
                 </button>
             </div>
         </div>
-
-        <table class="asset-table">
-            <thead>
-                <tr>
-                    <th>Asset Number</th>
-                    <th>Serial Number</th>
-                    <th>Name</th>
-                    <th>Category</th>
-                    <th>Department</th>
-                    <th>Status</th>
-                    <th>Condition</th>
-                    <th>Last Updated</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for asset in assets %}
-                <tr data-id="{{ asset.id }}" {% if not asset.is_active %}style="opacity: 0.6;"{% endif %}>
-                    <td>{{ asset.asset_number }}</td>
-                    <td>{{ asset.serial_number|default:"-" }}</td>
-                    <td>{{ asset.name }}</td>
-                    <td>{{ asset.category }}</td>
-                    <td>{{ asset.department.name }}</td>
-                    <td>
-                        <span class="status-badge {% if asset.is_active %}status-active{% else %}status-inactive{% endif %}">
-                            {{ asset.is_active|yesno:"Active,Inactive" }}
-                        </span>
-                    </td>
-                    <td>{{ asset.get_condition_display }}</td>
-                    <td>{{ asset.updated_at|date:"d M Y" }}</td>
-                    <td>
-                        <button class="btn btn-info btn-sm" onclick="editAsset('{{ asset.id }}')">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="btn btn-warning btn-sm" onclick="openMaintenanceModal('{{ asset.id }}')">
-                            <i class="fas fa-tools"></i>
-                        </button>
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="9" class="text-center">No assets found.</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-
-        <!-- Maintenance Section -->
-        <div class="section-header">
-            <h2>Maintenance Records</h2>
-            <div class="filter-section">
-                <select id="statusFilter" onchange="filterMaintenance()">
-                    <option value="">All Statuses</option>
-                    <option value="SCHEDULED">Scheduled</option>
-                    <option value="IN_PROGRESS">In Progress</option>
-                    <option value="COMPLETED">Completed</option>
-                    <option value="CANCELLED">Cancelled</option>
-                </select>
-                <select id="assetFilter" onchange="filterMaintenance()">
-                    <option value="">All Assets</option>
+        <div class="card-body">
+            <table id="assetsTable" class="table table-bordered table-striped">
+                <thead>
+                    <tr>
+                        <th>Asset Number</th>
+                        <th>Serial Number</th>
+                        <th>Name</th>
+                        <th>Category</th>
+                        <th>Department</th>
+                        <th>Status</th>
+                        <th>Condition</th>
+                        <th>Last Updated</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
                     {% for asset in assets %}
-                        <option value="{{ asset.id }}">{{ asset.name }}</option>
+                    <tr>
+                        <td>{{ asset.asset_number }}</td>
+                        <td>{{ asset.serial_number|default:"-" }}</td>
+                        <td>{{ asset.name }}</td>
+                        <td>{{ asset.category }}</td>
+                        <td>{{ asset.department.name }}</td>
+                        <td>
+                            <span class="badge {% if asset.is_active %}bg-success{% else %}bg-danger{% endif %}">
+                                {{ asset.is_active|yesno:"Active,Inactive" }}
+                            </span>
+                        </td>
+                        <td>{{ asset.condition }}</td>
+                        <td>{{ asset.updated_at|date:"d M Y" }}</td>
+                        <td>
+                            <button type="button" class="btn btn-sm btn-primary edit-asset" data-bs-toggle="modal" data-bs-target="#receiveAssetModal" data-id="{{ asset.id }}">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-danger delete-asset" data-id="{{ asset.id }}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-info" onclick="generateAssetReport('{{ asset.id }}')">
+                                <i class="fas fa-file-alt"></i>
+                            </button>
+                        </td>
+                    </tr>
                     {% endfor %}
-                </select>
-            </div>
+                </tbody>
+            </table>
         </div>
-        <table class="maintenance-table">
-            <thead>
-                <tr>
-                    <th>Asset</th>
-                    <th>Type</th>
-                    <th>Scheduled Date</th>
-                    <th>Technician</th>
-                    <th>Status</th>
-                    <th>Estimated Cost</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody id="maintenanceTableBody">
-                <!-- Maintenance records will be loaded here -->
-            </tbody>
-        </table>
     </div>
+</div>
 
-    <!-- Add Asset Modal -->
-    <div id="addAssetModal" class="modal">
+<!-- Receive Asset Modal -->
+<div class="modal fade" id="receiveAssetModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h2><i class="fas fa-plus-circle"></i> Add New Asset</h2>
-                <span class="close-modal" onclick="closeAddAssetModal()">&times;</span>
+                <h5 class="modal-title">Receive New Asset</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form action="{% url 'add_asset' %}" method="POST" onsubmit="return validateAssetForm()">
-                {% csrf_token %}
-                
-                <div class="form-section">
-                    <h3 class="form-section-title">Basic Information</h3>
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label for="asset_number">Asset Number*</label>
-                            <input type="text" id="asset_number" name="asset_number" required 
-                                   placeholder="Enter asset number">
+            <div class="modal-body">
+                <form id="receiveAssetForm" action="{% url 'add_asset' %}" method="POST">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="asset_number" class="form-label">Asset Number</label>
+                            <input type="text" class="form-control" id="asset_number" name="asset_number" required>
                         </div>
-                        <div class="form-group">
-                            <label for="serial_number">Serial Number</label>
-                            <input type="text" id="serial_number" name="serial_number" 
-                                   placeholder="Enter serial number">
-                        </div>
-                        <div class="form-group">
-                            <label for="name">Asset Name*</label>
-                            <input type="text" id="name" name="name" required 
-                                   placeholder="Enter asset name">
-                        </div>
-                        <div class="form-group">
-                            <label for="category">Category*</label>
-                            <div class="asset-category">
-                                <span class="category-tag" data-category="IT">IT Equipment</span>
-                                <span class="category-tag" data-category="FURNITURE">Furniture</span>
-                                <span class="category-tag" data-category="VEHICLE">Vehicle</span>
-                                <span class="category-tag" data-category="MACHINERY">Machinery</span>
-                            </div>
-                            <input type="hidden" id="category" name="category" required>
+                        <div class="col-md-6 mb-3">
+                            <label for="serial_number" class="form-label">Serial Number</label>
+                            <input type="text" class="form-control" id="serial_number" name="serial_number" required>
                         </div>
                     </div>
-                </div>
-
-                <div class="form-section">
-                    <h3 class="form-section-title">Location & Assignment</h3>
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label for="department">Department*</label>
-                            <select id="department" name="department" required>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="name" class="form-label">Asset Name</label>
+                            <input type="text" class="form-control" id="name" name="name" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="category" class="form-label">Category</label>
+                            <select class="form-select" id="category" name="category" required>
+                                <option value="">Select Category</option>
+                                <option value="IT">IT</option>
+                                <option value="VEHICLE">Vehicle</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="department" class="form-label">Department</label>
+                            <select class="form-select" id="department" name="department" required>
                                 <option value="">Select Department</option>
                                 {% for dept in departments %}
-                                    <option value="{{ dept.id }}">{{ dept.name }}</option>
+                                <option value="{{ dept.id }}">{{ dept.name }}</option>
                                 {% endfor %}
                             </select>
                         </div>
-                        <div class="form-group">
-                            <label for="location">Location*</label>
-                            <input type="text" id="location" name="location" required 
-                                   placeholder="Enter asset location">
-                        </div>
-                        <div class="form-group">
-                            <label for="condition">Condition*</label>
-                            <select id="condition" name="condition" required>
+                        <div class="col-md-6 mb-3">
+                            <label for="condition" class="form-label">Condition</label>
+                            <select class="form-select" id="condition" name="condition" required>
                                 <option value="">Select Condition</option>
-                                <option value="NEW">New</option>
+                                <option value="EXCELLENT">Excellent</option>
                                 <option value="GOOD">Good</option>
                                 <option value="FAIR">Fair</option>
                                 <option value="POOR">Poor</option>
@@ -680,448 +225,472 @@
                             </select>
                         </div>
                     </div>
-                </div>
-
-                <div class="form-section">
-                    <h3 class="form-section-title">Purchase Information</h3>
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label for="purchase_date">Purchase Date*</label>
-                            <input type="date" id="purchase_date" name="purchase_date" required>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="location" class="form-label">Location</label>
+                            <input type="text" class="form-control" id="location" name="location" required>
                         </div>
-                        <div class="form-group">
-                            <label for="purchase_cost">Purchase Cost (US)*</label>
-                            <input type="number" id="purchase_cost" name="purchase_cost" 
-                                   step="0.01" required placeholder="Enter amount in US">
-                        </div>
-                        <div class="form-group full-width">
-                            <label for="description">Description</label>
-                            <textarea id="description" name="description" rows="3" 
-                                    placeholder="Enter asset description"></textarea>
+                        <div class="col-md-6 mb-3">
+                            <label for="purchase_date" class="form-label">Purchase Date</label>
+                            <input type="date" class="form-control" id="purchase_date" name="purchase_date" required>
                         </div>
                     </div>
-                </div>
-
-                <div class="form-actions">
-                    <button type="button" class="btn btn-cancel" onclick="closeAddAssetModal()">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Create Asset</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Edit Asset Modal -->
-    <div id="editAssetModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2><i class="fas fa-edit"></i> Edit Asset</h2>
-                <span class="close-modal" onclick="closeEditAssetModal()">&times;</span>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="purchase_cost" class="form-label">Purchase Cost</label>
+                            <input type="number" step="0.01" class="form-control" id="purchase_cost" name="purchase_cost" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12 mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Save Asset</button>
+                    </div>
+                </form>
             </div>
-            <form id="editAssetForm" method="POST">
-                {% csrf_token %}
-                <input type="hidden" id="edit_asset_id" name="asset_id">
-                
-                <div class="form-section">
-                    <h3 class="form-section-title">Basic Information</h3>
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label for="edit_asset_number">Asset Number*</label>
-                            <input type="text" id="edit_asset_number" name="asset_number" required 
-                                   placeholder="Enter asset number">
-                        </div>
-                        <div class="form-group">
-                            <label for="edit_serial_number">Serial Number</label>
-                            <input type="text" id="edit_serial_number" name="serial_number" 
-                                   placeholder="Enter serial number">
-                        </div>
-                        <div class="form-group">
-                            <label for="edit_name">Asset Name*</label>
-                            <input type="text" id="edit_name" name="name" required 
-                                   placeholder="Enter asset name">
-                        </div>
-                        <div class="form-group">
-                            <label for="edit_category">Category*</label>
-                            <div class="asset-category">
-                                <span class="category-tag" data-category="IT">IT Equipment</span>
-                                <span class="category-tag" data-category="FURNITURE">Furniture</span>
-                                <span class="category-tag" data-category="VEHICLE">Vehicle</span>
-                                <span class="category-tag" data-category="MACHINERY">Machinery</span>
-                            </div>
-                            <input type="hidden" id="edit_category" name="category" required>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="form-section">
-                    <h3 class="form-section-title">Location & Assignment</h3>
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label for="edit_department">Department*</label>
-                            <select id="edit_department" name="department" required>
-                                <option value="">Select Department</option>
-                                {% for dept in departments %}
-                                    <option value="{{ dept.id }}">{{ dept.name }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="edit_location">Location*</label>
-                            <input type="text" id="edit_location" name="location" required 
-                                   placeholder="Enter asset location">
-                        </div>
-                        <div class="form-group">
-                            <label for="edit_condition">Condition*</label>
-                            <select id="edit_condition" name="condition" required>
-                                <option value="">Select Condition</option>
-                                <option value="NEW">New</option>
-                                <option value="GOOD">Good</option>
-                                <option value="FAIR">Fair</option>
-                                <option value="POOR">Poor</option>
-                                <option value="RETIRED">Retired</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="form-section">
-                    <h3 class="form-section-title">Purchase Information</h3>
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label for="edit_purchase_date">Purchase Date*</label>
-                            <input type="date" id="edit_purchase_date" name="purchase_date" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="edit_purchase_cost">Purchase Cost (US)*</label>
-                            <input type="number" id="edit_purchase_cost" name="purchase_cost" 
-                                   step="0.01" required placeholder="Enter amount in US">
-                        </div>
-                        <div class="form-group full-width">
-                            <label for="edit_description">Description</label>
-                            <textarea id="edit_description" name="description" rows="3" 
-                                    placeholder="Enter asset description"></textarea>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="form-actions">
-                    <button type="button" class="btn btn-cancel" onclick="closeEditAssetModal()">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Update Asset</button>
-                </div>
-            </form>
         </div>
     </div>
+</div>
+{% endblock %}
 
-    <!-- Maintenance Modal -->
-    <div id="maintenanceModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Schedule Maintenance</h2>
-                <span class="close-modal" onclick="closeMaintenanceModal()">&times;</span>
-            </div>
-            <form id="maintenanceForm" onsubmit="scheduleMaintenance(event)">
-                {% csrf_token %}
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label for="asset">Asset</label>
-                        <select id="asset" name="asset_id" required>
-                            {% for asset in assets %}
-                                <option value="{{ asset.id }}">{{ asset.name }} ({{ asset.asset_number }})</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="maintenance_type">Maintenance Type</label>
-                        <select id="maintenance_type" name="maintenance_type" required>
-                            <option value="PREVENTIVE">Preventive Maintenance</option>
-                            <option value="CORRECTIVE">Corrective Maintenance</option>
-                            <option value="INSPECTION">Inspection</option>
-                            <option value="UPGRADE">Upgrade/Update</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="scheduled_date">Scheduled Date</label>
-                        <input type="date" id="scheduled_date" name="scheduled_date" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="technician">Technician</label>
-                        <input type="text" id="technician" name="technician" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="estimated_cost">Estimated Cost</label>
-                        <input type="number" id="estimated_cost" name="estimated_cost" step="0.01">
-                    </div>
-                    <div class="form-group full-width">
-                        <label for="description">Description</label>
-                        <textarea id="description" name="description" rows="3" required></textarea>
-                    </div>
-                    <div class="form-actions">
-                        <button type="button" class="btn-cancel" onclick="closeMaintenanceModal()">Cancel</button>
-                        <button type="submit" class="btn-primary">Schedule Maintenance</button>
-                    </div>
-                </div>
-            </form>
-        </div>
-    </div>
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        let isEditing = false;
+        let editingAssetId = null;
 
-    <script>
-        function openAddAssetModal() {
-            const modal = document.getElementById('addAssetModal');
-            modal.style.display = 'block';
-            document.body.style.overflow = 'hidden';
-            // Reset form
-            modal.querySelector('form').reset();
-            document.querySelectorAll('.category-tag').forEach(tag => {
-                if (tag.dataset.category === 'IT') {
-                    tag.classList.add('selected');
-                } else {
-                    tag.classList.remove('selected');
-                }
-            });
-            document.getElementById('category').value = 'IT';
-        }
-
-        function closeAddAssetModal() {
-            const modal = document.getElementById('addAssetModal');
-            modal.style.display = 'none';
-            document.body.style.overflow = 'auto';
-        }
-
-        // Close modal when clicking outside
-        window.onclick = function(event) {
-            const modal = document.getElementById('addAssetModal');
-            if (event.target === modal) {
-                closeAddAssetModal();
-            }
-        }
-
-        // Close modal when pressing Escape key
-        document.addEventListener('keydown', function(event) {
-            if (event.key === 'Escape') {
-                closeAddAssetModal();
-            }
+        // Initialize DataTable
+        $('#assetsTable').DataTable({
+            order: [[7, 'desc']], // Sort by last updated by default
         });
 
-        function validateAssetForm() {
-            const required = ['asset_number', 'name', 'department', 
-                            'location', 'condition', 'purchase_date', 'purchase_cost'];
-            let isValid = true;
-
-            required.forEach(field => {
-                const element = document.getElementById(field);
-                if (!element.value) {
-                    element.classList.add('invalid-input');
-                    isValid = false;
-                } else {
-                    element.classList.remove('invalid-input');
-                }
-            });
-
-            return isValid;
-        }
-
-        // Add category selection functionality
-        document.querySelectorAll('.category-tag').forEach(tag => {
-            tag.addEventListener('click', function() {
-                document.querySelectorAll('.category-tag').forEach(t => t.classList.remove('selected'));
-                this.classList.add('selected');
-                document.getElementById('category').value = this.dataset.category;
-            });
-        });
-
-        // Load maintenance records when page loads
-        document.addEventListener('DOMContentLoaded', function() {
-            loadMaintenanceRecords();
-        });
-
-        function loadMaintenanceRecords() {
-            // Safely get filter values
-            const statusFilter = document.getElementById('statusFilter')?.value || '';
-            const assetFilter = document.getElementById('assetFilter')?.value || '';
-
-            // Fetch all maintenance records
-            fetch(`/get-asset-maintenance-history/${assetFilter || 'all'}/`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        const tbody = document.getElementById('maintenanceTableBody');
-                        if (!tbody) {
-                            console.error('Maintenance table body not found');
-                            return;
+        // Handle asset deletion
+        $('.delete-asset').click(function() {
+            if (confirm('Are you sure you want to delete this asset?')) {
+                const assetId = $(this).data('id');
+                $.ajax({
+                    url: "{% url 'delete_asset' 0 %}".replace('0', assetId),
+                    type: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    success: function(response) {
+                        if (response.status === 'success') {
+                            location.reload();
+                        } else {
+                            alert(response.message || 'Error deleting asset');
                         }
-                        
-                        tbody.innerHTML = '';
-                        
-                        data.maintenance_records
-                            .filter(record => !statusFilter || record.status.toUpperCase() === statusFilter)
-                            .forEach(record => {
-                                const row = document.createElement('tr');
-                                row.innerHTML = `
-                                    <td>${record.asset_name || '-'}</td>
-                                    <td>${record.maintenance_type || '-'}</td>
-                                    <td>${record.scheduled_date || '-'}</td>
-                                    <td>${record.technician || '-'}</td>
-                                    <td>
-                                        <span class="status-badge status-${(record.status || '').toLowerCase().replace('_', '-')}">
-                                            ${record.status || '-'}
-                                        </span>
-                                    </td>
-                                    <td>${record.estimated_cost ? '$' + record.estimated_cost.toFixed(2) : '-'}</td>
-                                    <td>
-                                        ${getActionButtons(record)}
-                                    </td>
-                                `;
-                                tbody.appendChild(row);
-                            });
-                    } else {
-                        console.error('Error loading maintenance records:', data.message);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error loading maintenance records:', error);
-                    const tbody = document.getElementById('maintenanceTableBody');
-                    if (tbody) {
-                        tbody.innerHTML = '<tr><td colspan="7" class="text-center">Error loading maintenance records</td></tr>';
+                    },
+                    error: function(xhr, status, error) {
+                        let errorMessage = 'Error deleting asset';
+                        try {
+                            const response = JSON.parse(xhr.responseText);
+                            errorMessage = response.message || errorMessage;
+                        } catch (e) {
+                            errorMessage += ': ' + error;
+                        }
+                        alert(errorMessage);
                     }
                 });
-        }
+            }
+        });
 
-        function getActionButtons(record) {
-            if (record.status === 'SCHEDULED') {
-                return `
-                    <div class="action-buttons">
-                        <button class="btn-primary" onclick="updateMaintenanceStatus(${record.id}, 'IN_PROGRESS')">
-                            Start
-                        </button>
-                        <button class="btn-delete" onclick="updateMaintenanceStatus(${record.id}, 'CANCELLED')">
-                            Cancel
-                        </button>
+        // Handle asset editing
+        $('.edit-asset').click(function(e) {
+            e.preventDefault();
+            const assetId = $(this).data('id');
+            editingAssetId = assetId;
+            isEditing = true;
+
+            // Update modal title
+            $('.modal-title').text('Edit Asset');
+
+            // Fetch asset details
+            $.ajax({
+                url: "{% url 'get_asset_details' 0 %}".replace('0', assetId),
+                type: 'GET',
+                success: function(response) {
+                    if (response.status === 'success') {
+                        const asset = response.asset;
+                        
+                        // Populate form fields
+                        $('#asset_number').val(asset.asset_number);
+                        $('#serial_number').val(asset.serial_number);
+                        $('#name').val(asset.name);
+                        $('#category').val(asset.category);
+                        $('#department').val(asset.department);
+                        $('#condition').val(asset.condition);
+                        $('#location').val(asset.location);
+                        $('#purchase_date').val(asset.purchase_date);
+                        $('#purchase_cost').val(asset.purchase_cost);
+                        $('#description').val(asset.description);
+
+                        // Update form action for editing
+                        $('#receiveAssetForm').attr('action', "{% url 'edit_asset' 0 %}".replace('0', assetId));
+
+                        // Show modal
+                        $('#receiveAssetModal').modal('show');
+                    } else {
+                        alert(response.message || 'Error fetching asset details');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    let errorMessage = 'Error fetching asset details';
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        errorMessage = response.message || errorMessage;
+                    } catch (e) {
+                        errorMessage += ': ' + error;
+                    }
+                    alert(errorMessage);
+                }
+            });
+        });
+
+        // Reset form and editing state when modal is closed
+        $('#receiveAssetModal').on('hidden.bs.modal', function () {
+            $('#receiveAssetForm')[0].reset();
+            isEditing = false;
+            editingAssetId = null;
+            $('.modal-title').text('Receive New Asset');
+            $('#receiveAssetForm').attr('action', "{% url 'add_asset' %}");
+        });
+
+        // Reset editing state when "Receive IT Asset" button is clicked
+        $('[data-bs-target="#receiveAssetModal"]').not('.edit-asset').click(function() {
+            isEditing = false;
+            editingAssetId = null;
+            $('.modal-title').text('Receive New Asset');
+            $('#receiveAssetForm')[0].reset();
+            $('#receiveAssetForm').attr('action', "{% url 'add_asset' %}");
+        });
+    });
+
+    // Print Asset Report function
+    function printAssetReport() {
+        // Create a new window for printing
+        const printWindow = window.open('', '_blank');
+        
+        // Get the table and stats data
+        const table = document.getElementById('assetsTable');
+        const stats = {
+            total: document.querySelector('.bg-primary h3').textContent,
+            active: document.querySelector('.bg-success h3').textContent,
+            maintenance: document.querySelector('.bg-warning h3').textContent,
+            retired: document.querySelector('.bg-danger h3').textContent
+        };
+        
+        // Create print-friendly HTML
+        const printContent = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>IT Asset Management Report</title>
+                <style>
+                    body { 
+                        font-family: Arial, sans-serif;
+                        padding: 20px;
+                        line-height: 1.6;
+                    }
+                    .print-header {
+                        text-align: center;
+                        margin-bottom: 30px;
+                        padding-bottom: 20px;
+                        border-bottom: 2px solid #333;
+                    }
+                    .stats-grid {
+                        display: grid;
+                        grid-template-columns: repeat(4, 1fr);
+                        gap: 20px;
+                        margin-bottom: 30px;
+                    }
+                    .stat-card {
+                        background: #f8f9fa;
+                        padding: 15px;
+                        border-radius: 8px;
+                        text-align: center;
+                    }
+                    .stat-card h3 {
+                        margin: 0;
+                        font-size: 14px;
+                        color: #666;
+                    }
+                    .stat-card .value {
+                        font-size: 24px;
+                        font-weight: bold;
+                        color: #333;
+                        margin-top: 5px;
+                    }
+                    table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        margin-top: 20px;
+                        font-size: 12px;
+                    }
+                    th, td {
+                        border: 1px solid #ddd;
+                        padding: 8px;
+                        text-align: left;
+                    }
+                    th {
+                        background-color: #f4f4f4;
+                        font-weight: bold;
+                    }
+                    .print-footer {
+                        margin-top: 30px;
+                        text-align: right;
+                        font-size: 12px;
+                        color: #666;
+                    }
+                    .badge {
+                        padding: 4px 8px;
+                        border-radius: 4px;
+                        font-size: 12px;
+                    }
+                    .bg-success {
+                        background-color: #28a745;
+                        color: white;
+                    }
+                    .bg-danger {
+                        background-color: #dc3545;
+                        color: white;
+                    }
+                    @media print {
+                        .no-print { display: none; }
+                        @page { margin: 2cm; }
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="print-header">
+                    <h1>IT Asset Management Report</h1>
+                    <p>Generated on: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}</p>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h3>Total Assets</h3>
+                        <div class="value">${stats.total}</div>
                     </div>
-                `;
-            } else if (record.status === 'IN_PROGRESS') {
-                return `
-                    <button class="btn-primary" onclick="updateMaintenanceStatus(${record.id}, 'COMPLETED')">
-                        Complete
-                    </button>
-                `;
-            }
-            return '-';
-        }
+                    <div class="stat-card">
+                        <h3>Active Assets</h3>
+                        <div class="value">${stats.active}</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Under Maintenance</h3>
+                        <div class="value">${stats.maintenance}</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Retired Assets</h3>
+                        <div class="value">${stats.retired}</div>
+                    </div>
+                </div>
 
-        function filterMaintenance() {
-            loadMaintenanceRecords();
-        }
+                ${table.outerHTML.replace(/<th>Actions<\/th>/, '').replace(/<td>[\s\S]*?<\/td>\s*<\/tr>/g, '</tr>')}
 
-        function openMaintenanceModal(assetId = null) {
-            const modal = document.getElementById('maintenanceModal');
-            modal.style.display = 'block';
-            document.body.style.overflow = 'hidden';
-            
-            // Reset form
-            const form = document.getElementById('maintenanceForm');
-            form.reset();
-            
-            // If an asset ID is provided, select that asset in the dropdown
-            if (assetId) {
-                const assetSelect = document.getElementById('asset');
-                assetSelect.value = assetId;
-            }
-            
-            // Set default scheduled date to tomorrow
-            const tomorrow = new Date();
-            tomorrow.setDate(tomorrow.getDate() + 1);
-            document.getElementById('scheduled_date').value = tomorrow.toISOString().split('T')[0];
-        }
+                <div class="print-footer">
+                    <p>Report generated by IT Asset Management System</p>
+                </div>
 
-        function closeMaintenanceModal() {
-            document.getElementById('maintenanceModal').style.display = 'none';
-            document.getElementById('maintenanceForm').reset();
-        }
+                <div class="no-print" style="margin-top: 20px; text-align: center;">
+                    <button onclick="window.print();window.close()">Print Report</button>
+                </div>
+            </body>
+            </html>
+        `;
+        
+        // Write to the new window and trigger print
+        printWindow.document.write(printContent);
+        printWindow.document.close();
+    }
 
-        function scheduleMaintenance(event) {
-            event.preventDefault();
-            const form = event.target;
-            const formData = new FormData(form);
+    // Generate Asset Report function
+    function generateAssetReport(assetId) {
+        // Fetch detailed asset information
+        $.ajax({
+            url: "{% url 'get_asset_details' 0 %}".replace('0', assetId),
+            type: 'GET',
+            success: function(response) {
+                if (response.status === 'success') {
+                    const asset = response.asset;
+                    // Create a new window for printing
+                    const printWindow = window.open('', '_blank');
+                    
+                    // Create print-friendly HTML
+                    const printContent = `
+                        <!DOCTYPE html>
+                        <html>
+                        <head>
+                            <title>Asset Report - ${asset.name}</title>
+                            <style>
+                                body { 
+                                    font-family: Arial, sans-serif;
+                                    padding: 20px;
+                                    line-height: 1.6;
+                                    color: #333;
+                                }
+                                .print-header {
+                                    text-align: center;
+                                    margin-bottom: 30px;
+                                    padding-bottom: 20px;
+                                    border-bottom: 2px solid #333;
+                                }
+                                .asset-details {
+                                    margin: 20px 0;
+                                }
+                                .detail-group {
+                                    display: grid;
+                                    grid-template-columns: repeat(2, 1fr);
+                                    gap: 20px;
+                                    margin-bottom: 20px;
+                                    padding: 15px;
+                                    background: #f8f9fa;
+                                    border-radius: 8px;
+                                }
+                                .detail-item {
+                                    padding: 10px;
+                                }
+                                .detail-label {
+                                    font-weight: bold;
+                                    color: #666;
+                                    margin-bottom: 5px;
+                                }
+                                .detail-value {
+                                    font-size: 1.1em;
+                                }
+                                .status-badge {
+                                    display: inline-block;
+                                    padding: 5px 10px;
+                                    border-radius: 4px;
+                                    font-size: 0.9em;
+                                    font-weight: bold;
+                                }
+                                .status-active {
+                                    background-color: #28a745;
+                                    color: white;
+                                }
+                                .status-inactive {
+                                    background-color: #dc3545;
+                                    color: white;
+                                }
+                                .print-footer {
+                                    margin-top: 30px;
+                                    text-align: right;
+                                    font-size: 12px;
+                                    color: #666;
+                                    border-top: 1px solid #ddd;
+                                    padding-top: 20px;
+                                }
+                                @media print {
+                                    .no-print { display: none; }
+                                    @page { margin: 2cm; }
+                                }
+                            </style>
+                        </head>
+                        <body>
+                            <div class="print-header">
+                                <h1>Asset Report</h1>
+                                <p>Generated on: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}</p>
+                            </div>
 
-            // Show loading state
-            const submitButton = form.querySelector('button[type="submit"]');
-            const originalText = submitButton.textContent;
-            submitButton.disabled = true;
-            submitButton.textContent = 'Scheduling...';
+                            <div class="asset-details">
+                                <h2>${asset.name}</h2>
+                                
+                                <div class="detail-group">
+                                    <div class="detail-item">
+                                        <div class="detail-label">Asset Number</div>
+                                        <div class="detail-value">${asset.asset_number}</div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <div class="detail-label">Serial Number</div>
+                                        <div class="detail-value">${asset.serial_number || '-'}</div>
+                                    </div>
+                                </div>
 
-            fetch('{% url "schedule_maintenance" %}', {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                }
-            })
-            .then(response => {
-                if (!response.ok) {
-                    return response.json().then(data => {
-                        throw new Error(data.message || 'Error scheduling maintenance');
-                    });
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.status === 'success') {
-                    alert('Maintenance scheduled successfully');
-                    closeMaintenanceModal();
-                    loadMaintenanceRecords();
+                                <div class="detail-group">
+                                    <div class="detail-item">
+                                        <div class="detail-label">Category</div>
+                                        <div class="detail-value">${asset.category}</div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <div class="detail-label">Department</div>
+                                        <div class="detail-value">${asset.department_name}</div>
+                                    </div>
+                                </div>
+
+                                <div class="detail-group">
+                                    <div class="detail-item">
+                                        <div class="detail-label">Status</div>
+                                        <div class="detail-value">
+                                            <span class="status-badge ${asset.is_active ? 'status-active' : 'status-inactive'}">
+                                                ${asset.is_active ? 'Active' : 'Inactive'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <div class="detail-label">Condition</div>
+                                        <div class="detail-value">${asset.condition}</div>
+                                    </div>
+                                </div>
+
+                                <div class="detail-group">
+                                    <div class="detail-item">
+                                        <div class="detail-label">Location</div>
+                                        <div class="detail-value">${asset.location}</div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <div class="detail-label">Purchase Date</div>
+                                        <div class="detail-value">${asset.purchase_date}</div>
+                                    </div>
+                                </div>
+
+                                <div class="detail-group">
+                                    <div class="detail-item">
+                                        <div class="detail-label">Purchase Cost</div>
+                                        <div class="detail-value">$${parseFloat(asset.purchase_cost).toFixed(2)}</div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <div class="detail-label">Last Updated</div>
+                                        <div class="detail-value">${asset.updated_at}</div>
+                                    </div>
+                                </div>
+
+                                <div class="detail-group">
+                                    <div class="detail-item" style="grid-column: 1 / -1;">
+                                        <div class="detail-label">Description</div>
+                                        <div class="detail-value">${asset.description || 'No description available'}</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="print-footer">
+                                <p>Report generated by IT Asset Management System</p>
+                                <p>Asset ID: ${assetId}</p>
+                            </div>
+
+                            <div class="no-print" style="margin-top: 20px; text-align: center;">
+                                <button onclick="window.print();window.close()">Print Report</button>
+                            </div>
+                        </body>
+                        </html>
+                    `;
+                    
+                    // Write to the new window and trigger print
+                    printWindow.document.write(printContent);
+                    printWindow.document.close();
                 } else {
-                    throw new Error(data.message || 'Error scheduling maintenance');
+                    alert(response.message || 'Error fetching asset details');
                 }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert(error.message || 'Error scheduling maintenance. Please check the console for details.');
-            })
-            .finally(() => {
-                // Reset button state
-                submitButton.disabled = false;
-                submitButton.textContent = originalText;
-            });
-        }
-
-        function updateMaintenanceStatus(maintenanceId, status) {
-            const formData = new FormData();
-            formData.append('status', status);
-            
-            if (status === 'COMPLETED') {
-                const notes = prompt('Enter completion notes (optional):');
-                if (notes !== null) {
-                    formData.append('completion_notes', notes);
-                }
+            },
+            error: function(xhr, status, error) {
+                alert('Error generating asset report: ' + error);
             }
-
-            fetch(`/update-maintenance-status/${maintenanceId}/`, {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    alert('Maintenance status updated successfully');
-                    loadMaintenanceRecords();
-                } else {
-                    alert(data.message || 'Error updating maintenance status');
-                }
-            })
-            .catch(error => {
-                alert('Error updating maintenance status');
-                console.error('Error:', error);
-            });
-        }
-
-        // Close modal when clicking outside
-        window.onclick = function(event) {
-            if (event.target.className === 'modal') {
-                event.target.style.display = 'none';
-            }
-        }
-    </script>
-</body>
-</html> 
+        });
+    }
+</script>
+{% endblock %} 

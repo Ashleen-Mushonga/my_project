@@ -1,0 +1,413 @@
+{% extends 'myapp/base.html' %}
+{% load static %}
+
+{% block title %}Maintenance Records{% endblock %}
+
+{% block extra_css %}
+<!-- Add DataTables CSS -->
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Maintenance Records</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+        <li class="breadcrumb-item active">Maintenance Records</li>
+    </ol>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-primary text-white mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h3 class="mb-0">{{ stats.total_records }}</h3>
+                            <div class="small">Total Records</div>
+                        </div>
+                        <i class="fas fa-clipboard-list fa-2x text-white-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-warning text-white mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h3 class="mb-0">{{ stats.scheduled }}</h3>
+                            <div class="small">Scheduled</div>
+                        </div>
+                        <i class="fas fa-calendar fa-2x text-white-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-info text-white mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h3 class="mb-0">{{ stats.in_progress }}</h3>
+                            <div class="small">In Progress</div>
+                        </div>
+                        <i class="fas fa-tools fa-2x text-white-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-success text-white mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h3 class="mb-0">{{ stats.completed }}</h3>
+                            <div class="small">Completed</div>
+                        </div>
+                        <i class="fas fa-check-circle fa-2x text-white-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <div>
+                <i class="fas fa-table me-1"></i>
+                Maintenance Records
+            </div>
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-secondary" onclick="exportToExcel()">
+                    <i class="fas fa-file-export"></i> Export
+                </button>
+                <button type="button" class="btn btn-info" onclick="printRecords()">
+                    <i class="fas fa-print"></i> Print
+                </button>
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#scheduleMaintenance">
+                    <i class="fas fa-plus"></i> Schedule Maintenance
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <table id="maintenanceTable" class="table table-bordered table-striped">
+                <thead>
+                    <tr>
+                        <th>Asset</th>
+                        <th>Type</th>
+                        <th>Scheduled Date</th>
+                        <th>Technician</th>
+                        <th>Status</th>
+                        <th>Est. Cost</th>
+                        <th>Completion Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in maintenance_records %}
+                    <tr>
+                        <td>{{ record.asset.name }}</td>
+                        <td>{{ record.maintenance_type }}</td>
+                        <td>{{ record.scheduled_date|date:"Y-m-d" }}</td>
+                        <td>{{ record.technician }}</td>
+                        <td>
+                            <span class="badge {% if record.status == 'COMPLETED' %}bg-success{% elif record.status == 'SCHEDULED' %}bg-warning{% elif record.status == 'IN_PROGRESS' %}bg-info{% else %}bg-secondary{% endif %}">
+                                {{ record.status }}
+                            </span>
+                        </td>
+                        <td>${{ record.estimated_cost|default:"-" }}</td>
+                        <td>{{ record.completion_date|date:"Y-m-d"|default:"-" }}</td>
+                        <td>
+                            {% if record.status != 'COMPLETED' and record.status != 'CANCELLED' %}
+                            <button type="button" class="btn btn-sm btn-success update-status" onclick="handleStatusUpdate('{{ record.id }}', 'COMPLETED')">
+                                <i class="fas fa-check"></i>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-danger update-status" onclick="handleStatusUpdate('{{ record.id }}', 'CANCELLED')">
+                                <i class="fas fa-times"></i>
+                            </button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Schedule Maintenance Modal -->
+<div class="modal fade" id="scheduleMaintenance" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Schedule Maintenance</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="maintenanceForm">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="asset" class="form-label">Asset</label>
+                        <select class="form-select" id="asset" name="asset_id" required>
+                            <option value="">Select Asset</option>
+                            {% for asset in assets %}
+                            <option value="{{ asset.id }}">{{ asset.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="maintenanceType" class="form-label">Maintenance Type</label>
+                        <select class="form-select" id="maintenanceType" name="maintenance_type" required>
+                            <option value="">Select Type</option>
+                            <option value="PREVENTIVE">Preventive</option>
+                            <option value="CORRECTIVE">Corrective</option>
+                            <option value="PREDICTIVE">Predictive</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="scheduledDate" class="form-label">Scheduled Date</label>
+                        <input type="date" class="form-control" id="scheduledDate" name="scheduled_date" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="technician" class="form-label">Technician</label>
+                        <input type="text" class="form-control" id="technician" name="technician" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="3" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="estimatedCost" class="form-label">Estimated Cost</label>
+                        <input type="number" class="form-control" id="estimatedCost" name="estimated_cost" step="0.01" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="scheduleButton">Schedule</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Add jQuery and DataTables JS -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
+
+<script>
+    // Export to Excel function - moved outside document.ready
+    function exportToExcel() {
+        const table = $('#maintenanceTable').DataTable();
+        const data = table.rows().data();
+        const headers = ['Asset', 'Type', 'Scheduled Date', 'Technician', 'Status', 'Est. Cost', 'Completion Date'];
+        let csv = headers.join(',') + '\n';
+        
+        data.each(function(row) {
+            const processedRow = [];
+            for (let i = 0; i < row.length - 1; i++) {
+                let cellData = row[i];
+                const div = document.createElement('div');
+                div.innerHTML = cellData;
+                let text = div.textContent || div.innerText || '';
+                text = text.trim();
+                if (text === '-') {
+                    text = '';
+                } else if (text.startsWith('$')) {
+                    text = text.substring(1);
+                }
+                text = `"${text.replace(/"/g, '""')}"`;
+                processedRow.push(text);
+            }
+            csv += processedRow.join(',') + '\n';
+        });
+
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `maintenance_records_${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    }
+
+    // Print function - moved outside document.ready
+    function printRecords() {
+        const printWindow = window.open('', '_blank');
+        const table = document.getElementById('maintenanceTable');
+        
+        const printContent = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Maintenance Records</title>
+                <style>
+                    body { font-family: Arial, sans-serif; }
+                    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                    th { background-color: #f4f4f4; }
+                    .print-header { text-align: center; margin-bottom: 20px; }
+                    .print-date { text-align: right; margin-bottom: 20px; }
+                    @media print {
+                        .no-print { display: none; }
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="print-header">
+                    <h1>Maintenance Records</h1>
+                </div>
+                <div class="print-date">
+                    Generated on: ${new Date().toLocaleDateString()}
+                </div>
+                ${table.outerHTML}
+                <div class="no-print" style="margin-top: 20px; text-align: center;">
+                    <button onclick="window.print();window.close()">Print</button>
+                </div>
+            </body>
+            </html>
+        `;
+        
+        printWindow.document.write(printContent);
+        printWindow.document.close();
+    }
+
+    // Global function to handle status updates
+    function handleStatusUpdate(maintenanceId, newStatus) {
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        
+        if (newStatus === 'COMPLETED') {
+            const notes = prompt('Enter completion notes (optional):');
+            if (notes === null) {
+                return; // User cancelled the prompt
+            }
+            updateMaintenanceStatus(maintenanceId, newStatus, notes, csrfToken);
+        } else {
+            updateMaintenanceStatus(maintenanceId, newStatus, '', csrfToken);
+        }
+    }
+
+    function updateMaintenanceStatus(maintenanceId, status, notes, csrfToken) {
+        // Disable all action buttons
+        const buttons = document.querySelectorAll('.update-status');
+        buttons.forEach(button => button.disabled = true);
+
+        const formData = new FormData();
+        formData.append('status', status);
+        if (notes) {
+            formData.append('completion_notes', notes);
+        }
+
+        // Use the Django URL template tag for the correct URL
+        fetch("{% url 'update_maintenance_status' 0 %}".replace('0', maintenanceId), {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': csrfToken
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.status === 'success') {
+                alert('Status updated successfully!');
+                window.location.reload();
+            } else {
+                throw new Error(data.message || 'Failed to update status');
+            }
+        })
+        .catch(error => {
+            alert('Error updating maintenance status: ' + error.message);
+            // Re-enable all buttons on error
+            buttons.forEach(button => button.disabled = false);
+        });
+    }
+
+    $(document).ready(function() {
+        // Initialize DataTable with options
+        try {
+            $('#maintenanceTable').DataTable({
+                order: [[2, 'desc']], // Sort by scheduled date by default
+                pageLength: 10,
+                responsive: true,
+                language: {
+                    search: "Search records:",
+                    lengthMenu: "Show _MENU_ records per page",
+                    info: "Showing _START_ to _END_ of _TOTAL_ records",
+                    paginate: {
+                        first: "First",
+                        last: "Last",
+                        next: "Next",
+                        previous: "Previous"
+                    }
+                }
+            });
+        } catch (error) {
+            console.error('Error initializing DataTable:', error);
+        }
+
+        // Handle maintenance scheduling
+        $('#scheduleButton').click(function(e) {
+            e.preventDefault();
+            const form = $('#maintenanceForm')[0];
+            const formData = new FormData(form);
+            
+            if (!form.checkValidity()) {
+                alert('Please fill in all required fields');
+                return;
+            }
+
+            $(this).prop('disabled', true);
+            
+            $.ajax({
+                url: '{% url "schedule_maintenance" %}',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                headers: {
+                    'X-CSRFToken': $('[name=csrfmiddlewaretoken]').val()
+                },
+                success: function(response) {
+                    if (response.status === 'success') {
+                        alert('Maintenance scheduled successfully!');
+                        $('#scheduleMaintenance').modal('hide');
+                        location.reload();
+                    } else {
+                        alert('Error: ' + (response.message || 'Failed to schedule maintenance'));
+                    }
+                },
+                error: function(xhr) {
+                    let errorMessage = 'Error scheduling maintenance';
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        errorMessage = response.message || errorMessage;
+                    } catch (e) {
+                        errorMessage += ': ' + xhr.statusText;
+                    }
+                    alert(errorMessage);
+                },
+                complete: function() {
+                    $('#scheduleButton').prop('disabled', false);
+                }
+            });
+        });
+
+        // Reset form when modal is closed
+        $('#scheduleMaintenance').on('hidden.bs.modal', function() {
+            $('#maintenanceForm')[0].reset();
+            $('#scheduleButton').prop('disabled', false);
+        });
+    });
+</script>
+{% endblock %} 

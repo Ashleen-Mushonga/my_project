@@ -8,6 +8,7 @@ from django.db import IntegrityError
 from django.utils import timezone
 import random
 from datetime import datetime
+import csv
 
 
 def login(request):
@@ -269,6 +270,7 @@ def add_asset(request):
             employee = Employee.objects.get(id=request.session['employee_id'])
             asset = Asset.objects.create(
                 asset_number=request.POST.get('asset_number'),
+                serial_number=request.POST.get('serial_number'),
                 name=request.POST.get('name'),
                 category=request.POST.get('category'),
                 description=request.POST.get('description', ''),
@@ -291,19 +293,45 @@ def edit_asset(request, asset_id):
     if request.method == 'POST':
         try:
             asset = get_object_or_404(Asset, id=asset_id)
+
+            # Update asset fields
+            asset.asset_number = request.POST.get('asset_number')
+            asset.serial_number = request.POST.get('serial_number')
             asset.name = request.POST.get('name')
             asset.category = request.POST.get('category')
-            asset.description = request.POST.get('description')
             asset.department_id = request.POST.get('department')
-            asset.location = request.POST.get('location')
             asset.condition = request.POST.get('condition')
-            asset.purchase_date = request.POST.get('purchase_date')
-            asset.purchase_cost = request.POST.get('purchase_cost')
-            asset.save()
-            messages.success(request, 'Asset updated successfully')
+            asset.location = request.POST.get('location')
+            asset.is_active = request.POST.get('is_active') == 'true'
+
+            try:
+                asset.save()
+                return JsonResponse({'status': 'success', 'message': 'Asset updated successfully'})
+            except IntegrityError:
+                return JsonResponse({
+                    'status': 'error',
+                    'message': 'Asset number already exists'
+                }, status=400)
+            except Exception as e:
+                return JsonResponse({
+                    'status': 'error',
+                    'message': f'Error saving asset: {str(e)}'
+                }, status=400)
+
+        except Asset.DoesNotExist:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Asset not found'
+            }, status=404)
         except Exception as e:
-            messages.error(request, f'Error updating asset: {str(e)}')
-    return redirect('asset_management')
+            return JsonResponse({
+                'status': 'error',
+                'message': f'Error updating asset: {str(e)}'
+            }, status=400)
+    return JsonResponse({
+        'status': 'error',
+        'message': 'Invalid request method'
+    }, status=405)
 
 
 def toggle_asset_status(request, asset_id):
@@ -899,3 +927,110 @@ def get_asset_maintenance_history(request, asset_id):
             'status': 'error',
             'message': str(e)
         }, status=400)
+
+
+def maintenance_records(request):
+    if 'employee_id' not in request.session:
+        return redirect('login')
+
+    employee = Employee.objects.get(id=request.session['employee_id'])
+
+    # Get all maintenance records with related asset information
+    maintenance_records = AssetMaintenance.objects.select_related(
+        'asset').all().order_by('-scheduled_date')
+
+    # Calculate statistics
+    stats = {
+        'total_records': maintenance_records.count(),
+        'scheduled': maintenance_records.filter(status='SCHEDULED').count(),
+        'in_progress': maintenance_records.filter(status='IN_PROGRESS').count(),
+        'completed': maintenance_records.filter(status='COMPLETED').count(),
+        'cancelled': maintenance_records.filter(status='CANCELLED').count()
+    }
+
+    # Get all active assets for the maintenance scheduling form
+    active_assets = Asset.objects.filter(is_active=True)
+
+    return render(request, 'myapp/maintenance_records.html', {
+        'employee': employee,
+        'maintenance_records': maintenance_records,
+        'stats': stats,
+        'assets': active_assets
+    })
+
+
+def export_asset_list(request):
+    if 'employee_id' not in request.session:
+        return redirect('login')
+
+    # Create the HttpResponse object with CSV header
+    response = HttpResponse(content_type='text/csv')
+    timestamp = timezone.now().strftime('%Y%m%d_%H%M%S')
+    response['Content-Disposition'] = f'attachment; filename="asset_list_{timestamp}.csv"'
+
+    # Create CSV writer
+    writer = csv.writer(response)
+
+    # Write header row
+    writer.writerow([
+        'Asset Number',
+        'Serial Number',
+        'Name',
+        'Category',
+        'Department',
+        'Location',
+        'Purchase Date',
+        'Purchase Cost',
+        'Condition',
+        'Status',
+        'Last Updated'
+    ])
+
+    # Get all non-deleted assets
+    assets = Asset.objects.select_related(
+        'department').filter(is_deleted=False)
+
+    # Write data rows
+    for asset in assets:
+        writer.writerow([
+            asset.asset_number,
+            asset.serial_number or '',
+            asset.name,
+            asset.category,
+            asset.department.name if asset.department else '',
+            asset.location or '',
+            asset.purchase_date,
+            asset.purchase_cost,
+            asset.condition,
+            'Active' if asset.is_active else 'Inactive',
+            asset.updated_at.strftime(
+                '%Y-%m-%d %H:%M:%S') if asset.updated_at else ''
+        ])
+
+    return response
+
+
+def get_asset_details(request, asset_id):
+    if request.method == 'GET':
+        try:
+            asset = Asset.objects.select_related('department').get(id=asset_id)
+            return JsonResponse({
+                'status': 'success',
+                'asset': {
+                    'asset_number': asset.asset_number,
+                    'serial_number': asset.serial_number or '',
+                    'name': asset.name,
+                    'category': asset.category,
+                    'department': str(asset.department.id) if asset.department else '',
+                    'condition': asset.condition,
+                    'location': asset.location or '',
+                    'purchase_date': asset.purchase_date.strftime('%Y-%m-%d') if asset.purchase_date else '',
+                    'purchase_cost': str(asset.purchase_cost) if asset.purchase_cost else '',
+                    'description': asset.description or ''
+                }
+            })
+        except Asset.DoesNotExist:
+            return JsonResponse({'status': 'error', 'message': 'Asset not found'}, status=404)
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=405)

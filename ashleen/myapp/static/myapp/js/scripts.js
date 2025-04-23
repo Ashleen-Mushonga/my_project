@@ -1,0 +1,25 @@
+// Sidebar Toggle
+window.addEventListener('DOMContentLoaded', event => {
+    const sidebarToggle = document.body.querySelector('#sidebarToggle');
+    if (sidebarToggle) {
+        if (localStorage.getItem('sb|sidebar-toggle') === 'true') {
+            document.body.classList.toggle('sb-sidenav-toggled');
+        }
+
+        sidebarToggle.addEventListener('click', event => {
+            event.preventDefault();
+            document.body.classList.toggle('sb-sidenav-toggled');
+            localStorage.setItem('sb|sidebar-toggle', document.body.classList.contains('sb-sidenav-toggled'));
+        });
+    }
+});
+
+// Initialize DataTables
+document.addEventListener('DOMContentLoaded', function () {
+    const datatablesSimple = document.getElementsByClassName('datatable-table');
+    if (datatablesSimple.length > 0) {
+        Array.from(datatablesSimple).forEach(table => {
+            new simpleDatatables.DataTable(table);
+        });
+    }
+}); 

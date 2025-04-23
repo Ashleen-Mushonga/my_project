@@ -379,6 +379,7 @@
                 <thead>
                     <tr>
                         <th>Asset Number</th>
+                        <th>Serial Number</th>
                         <th>Name</th>
                         <th>Category</th>
                         <th>Department</th>
@@ -393,6 +394,7 @@
                     {% for asset in assets %}
             <tr>
                         <td>{{ asset.asset_number }}</td>
+                        <td>{{ asset.serial_number }}</td>
                         <td>{{ asset.name }}</td>
                 <td>{{ asset.category }}</td>
                 <td>{{ asset.department.name }}</td>
@@ -432,6 +434,10 @@
                         <div class="form-group">
                         <label for="asset_number">Asset Number</label>
                         <input type="text" id="asset_number" name="asset_number" required>
+                        </div>
+                        <div class="form-group">
+                        <label for="serial_number">Serial Number</label>
+                        <input type="text" id="serial_number" name="serial_number" required>
                         </div>
                         <div class="form-group">
                         <label for="name">Name</label>
@@ -485,6 +491,72 @@
         </div>
     </div>
 
+    <!-- Edit Asset Modal -->
+    <div id="editAssetModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Edit Asset</h2>
+                <span class="close-modal" onclick="closeEditAssetModal()">&times;</span>
+            </div>
+            <form id="editAssetForm">
+                {% csrf_token %}
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="edit_asset_number">Asset Number</label>
+                        <input type="text" id="edit_asset_number" name="asset_number" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit_serial_number">Serial Number</label>
+                        <input type="text" id="edit_serial_number" name="serial_number" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit_name">Name</label>
+                        <input type="text" id="edit_name" name="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit_category">Category</label>
+                        <select id="edit_category" name="category" required>
+                            <option value="IT">IT</option>
+                            <option value="VEHICLE">Vehicle</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit_department">Department</label>
+                        <select id="edit_department" name="department" required>
+                            {% for dept in departments %}
+                            <option value="{{ dept.id }}">{{ dept.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit_location">Location</label>
+                        <input type="text" id="edit_location" name="location" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit_condition">Condition</label>
+                        <select id="edit_condition" name="condition" required>
+                            <option value="EXCELLENT">Excellent</option>
+                            <option value="GOOD">Good</option>
+                            <option value="FAIR">Fair</option>
+                            <option value="POOR">Poor</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit_status">Status</label>
+                        <select id="edit_status" name="is_active" required>
+                            <option value="true">Active</option>
+                            <option value="false">Inactive</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn-cancel" onclick="closeEditAssetModal()">Cancel</button>
+                    <button type="submit" class="btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Add Maintenance Modal -->
     <div id="maintenanceModal" class="modal">
         <div class="modal-content">
@@ -520,7 +592,7 @@
                         <label for="description">Description</label>
                         <textarea id="description" name="description" rows="3" required></textarea>
                     </div>
-                    <input type="hidden" id="maintenance_asset_id" name="asset">
+                    <input type="hidden" id="maintenance_asset_id" name="asset_id">
                     <div class="form-actions">
                         <button type="button" class="btn-cancel" onclick="closeMaintenanceModal()">Cancel</button>
                         <button type="submit" class="btn-primary">Schedule Maintenance</button>
@@ -566,6 +638,93 @@
             document.getElementById('addAssetModal').style.display = 'none';
         }
 
+        // Edit modal functionality
+        function openEditAssetModal(assetId) {
+            // Fetch asset details
+            fetch("{% url 'get_asset_details' 0 %}".replace('0', assetId), {
+                method: 'GET',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.status === 'success') {
+                    const asset = data.asset;
+                    
+                    // Populate form fields
+                    document.getElementById('edit_asset_number').value = asset.asset_number || '';
+                    document.getElementById('edit_serial_number').value = asset.serial_number || '';
+                    document.getElementById('edit_name').value = asset.name || '';
+                    document.getElementById('edit_category').value = asset.category || 'IT';
+                    document.getElementById('edit_department').value = asset.department || '';
+                    document.getElementById('edit_location').value = asset.location || '';
+                    document.getElementById('edit_condition').value = asset.condition || 'GOOD';
+                    document.getElementById('edit_status').value = (asset.is_active || false).toString();
+                    
+                    // Store asset ID for form submission
+                    document.getElementById('editAssetForm').dataset.assetId = assetId;
+                    
+                    // Show modal
+                    document.getElementById('editAssetModal').style.display = 'block';
+                } else {
+                    throw new Error(data.message || 'Failed to fetch asset details');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error fetching asset details: ' + error.message);
+            });
+        }
+
+        function closeEditAssetModal() {
+            document.getElementById('editAssetModal').style.display = 'none';
+            document.getElementById('editAssetForm').reset();
+        }
+
+        // Handle edit form submission
+        document.getElementById('editAssetForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const assetId = this.dataset.assetId;
+            const formData = new FormData(this);
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+            fetch("{% url 'edit_asset' 0 %}".replace('0', assetId), {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': csrfToken
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(data => {
+                        throw new Error(data.message || 'Failed to update asset');
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.status === 'success') {
+                    alert('Asset updated successfully');
+                    closeEditAssetModal();
+                    location.reload();
+                } else {
+                    throw new Error(data.message || 'Failed to update asset');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error updating asset: ' + error.message);
+            });
+        });
+
         // Search functionality
         document.getElementById('searchInput').addEventListener('input', function(e) {
             const searchTerm = e.target.value.toLowerCase();
@@ -580,19 +739,29 @@
         // Delete asset
         function deleteAsset(assetId) {
             if (confirm('Are you sure you want to delete this asset?')) {
-                fetch(`/delete-asset/${assetId}/`, {
+                fetch("{% url 'delete_asset' 0 %}".replace('0', assetId), {
                     method: 'POST',
                     headers: {
                         'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                    },
+                        'Content-Type': 'application/json',
+                    }
                 })
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
                 .then(data => {
                     if (data.status === 'success') {
                         location.reload();
                     } else {
-                        alert('Error deleting asset');
+                        throw new Error(data.message || 'Failed to delete asset');
                     }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error deleting asset: ' + error.message);
                 });
             }
         }
@@ -637,18 +806,25 @@
                     'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
                 }
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(data => {
+                        throw new Error(data.message || 'Failed to schedule maintenance');
+                    });
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.status === 'success') {
                     alert('Maintenance scheduled successfully');
                     closeMaintenanceModal();
                     location.reload();
                 } else {
-                    alert(data.message || 'Error scheduling maintenance');
+                    throw new Error(data.message || 'Error scheduling maintenance');
                 }
             })
             .catch(error => {
-                alert('Error scheduling maintenance');
+                alert('Error scheduling maintenance: ' + error.message);
                 console.error('Error:', error);
             });
         }
