@@ -159,13 +159,19 @@ def system_management(request):
 def add_employee(request):
     if request.method == 'POST':
         try:
+            # Get the department instance from the department ID
+            department_id = request.POST.get('department')
+            department = None
+            if department_id:
+                department = get_object_or_404(Department, id=department_id)
+
             employee = Employee.objects.create(
                 employee_number=request.POST.get('employee_number'),
                 name=request.POST.get('name'),
                 surname=request.POST.get('surname'),
                 email=request.POST.get('email'),
                 phone_number=request.POST.get('phone_number'),
-                department=request.POST.get('department'),
+                department=department,
                 branch=request.POST.get('branch'),
                 section=request.POST.get('section'),
                 is_first_login=True
@@ -196,7 +202,13 @@ def edit_employee(request, employee_id):
             employee.surname = request.POST.get('surname')
             employee.email = request.POST.get('email')
             employee.phone_number = request.POST.get('phone_number')
-            employee.department = request.POST.get('department')
+
+            # Get the department instance from the department ID
+            department_id = request.POST.get('department')
+            if department_id:
+                employee.department = get_object_or_404(
+                    Department, id=department_id)
+
             employee.branch = request.POST.get('branch')
             employee.section = request.POST.get('section')
             employee.save()
