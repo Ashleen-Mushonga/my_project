@@ -114,7 +114,7 @@
                 <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#receiveAssetModal">
                     <i class="fas fa-plus"></i> Receive Asset
                 </button>
-                <button type="button" class="btn btn-secondary btn-sm ms-2">
+                <button type="button" class="btn btn-secondary btn-sm ms-2" data-bs-toggle="modal" data-bs-target="#filterModal">
                     <i class="fas fa-filter"></i> Filter
                 </button>
             </div>
@@ -256,38 +256,226 @@
         </div>
     </div>
 </div>
+
+<!-- Filter Modal -->
+<div class="modal fade" id="filterModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Filter Assets</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="filterForm">
+                    <div class="mb-3">
+                        <label for="filterDepartment" class="form-label">Department</label>
+                        <select class="form-select" id="filterDepartment">
+                            <option value="">All Departments</option>
+                            {% for dept in departments %}
+                            <option value="{{ dept.name }}">{{ dept.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="filterCategory" class="form-label">Category</label>
+                        <select class="form-select" id="filterCategory">
+                            <option value="">All Categories</option>
+                            <option value="IT">IT</option>
+                            <option value="VEHICLE">Vehicle</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="filterCondition" class="form-label">Condition</label>
+                        <select class="form-select" id="filterCondition">
+                            <option value="">All Conditions</option>
+                            <option value="EXCELLENT">Excellent</option>
+                            <option value="GOOD">Good</option>
+                            <option value="FAIR">Fair</option>
+                            <option value="POOR">Poor</option>
+                            <option value="RETIRED">Retired</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="filterStatus" class="form-label">Status</label>
+                        <select class="form-select" id="filterStatus">
+                            <option value="">All Statuses</option>
+                            <option value="Active">Active</option>
+                            <option value="Inactive">Inactive</option>
+                        </select>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" id="resetFilter">Reset Filters</button>
+                        <button type="button" class="btn btn-primary" id="applyFilter">Apply Filters</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-    $(document).ready(function() {
+    document.addEventListener('DOMContentLoaded', function() {
+        // Variables for storing state
         let isEditing = false;
         let editingAssetId = null;
-
-        // Initialize DataTable
-        $('#assetsTable').DataTable({
-            order: [[7, 'desc']], // Sort by last updated by default
+        
+        // Handle the Apply Filter button click directly with vanilla JS
+        document.getElementById('applyFilter').addEventListener('click', function() {
+            // Get filter values
+            const department = document.getElementById('filterDepartment').value;
+            const category = document.getElementById('filterCategory').value;
+            const condition = document.getElementById('filterCondition').value;
+            const status = document.getElementById('filterStatus').value;
+            
+            // Get all table rows
+            const table = document.getElementById('assetsTable');
+            const rows = table.querySelectorAll('tbody tr');
+            
+            // Loop through all rows and apply filtering
+            rows.forEach(function(row) {
+                const rowDepartment = row.cells[4].textContent.trim(); // Department column
+                const rowCategory = row.cells[3].textContent.trim();   // Category column
+                const rowCondition = row.cells[6].textContent.trim();  // Condition column
+                const rowStatus = row.cells[5].textContent.trim();     // Status column
+                
+                // Check if row matches all selected filters
+                const matchesDepartment = !department || rowDepartment.includes(department);
+                const matchesCategory = !category || rowCategory === category;
+                const matchesCondition = !condition || rowCondition === condition;
+                const matchesStatus = !status || rowStatus.includes(status);
+                
+                // Show/hide row based on filter match
+                if (matchesDepartment && matchesCategory && matchesCondition && matchesStatus) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+            
+            // Show feedback
+            let appliedFilters = [];
+            if (department) appliedFilters.push(`Department: ${department}`);
+            if (category) appliedFilters.push(`Category: ${category}`);
+            if (condition) appliedFilters.push(`Condition: ${condition}`);
+            if (status) appliedFilters.push(`Status: ${status}`);
+            
+            if (appliedFilters.length > 0) {
+                alert(`Filters applied: ${appliedFilters.join(', ')}`);
+            }
+            
+            // Close modal (compatible with both vanilla JS and Bootstrap)
+            const filterModal = document.getElementById('filterModal');
+            if (typeof bootstrap !== 'undefined') {
+                const modal = bootstrap.Modal.getInstance(filterModal);
+                if (modal) modal.hide();
+            } else {
+                // Fallback method
+                filterModal.classList.remove('show');
+                filterModal.style.display = 'none';
+                document.body.classList.remove('modal-open');
+                const modalBackdrops = document.querySelectorAll('.modal-backdrop');
+                modalBackdrops.forEach(backdrop => backdrop.remove());
+            }
         });
-
-        // Handle asset deletion
-        $('.delete-asset').click(function() {
-            if (confirm('Are you sure you want to delete this asset?')) {
+        
+        // Handle Reset Filters button
+        document.getElementById('resetFilter').addEventListener('click', function() {
+            // Reset form
+            document.getElementById('filterForm').reset();
+            
+            // Show all rows
+            const rows = document.querySelectorAll('#assetsTable tbody tr');
+            rows.forEach(function(row) {
+                row.style.display = '';
+            });
+            
+            // Show feedback
+            alert('Filters have been reset');
+        });
+        
+        // Initialize DataTable if jQuery and DataTables are available
+        if (typeof $ !== 'undefined' && $.fn.DataTable) {
+            let assetTable = $('#assetsTable').DataTable({
+                order: [[7, 'desc']], // Sort by last updated by default
+                dom: 'lrtip' // Hide the default search box
+            });
+        }
+        
+        // Handle asset deletion (keep existing implementation)
+        if (typeof $ !== 'undefined') {
+            $('.delete-asset').click(function() {
+                if (confirm('Are you sure you want to delete this asset?')) {
+                    const assetId = $(this).data('id');
+                    $.ajax({
+                        url: "{% url 'delete_asset' 0 %}".replace('0', assetId),
+                        type: 'POST',
+                        headers: {
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        },
+                        success: function(response) {
+                            if (response.status === 'success') {
+                                location.reload();
+                            } else {
+                                alert(response.message || 'Error deleting asset');
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            let errorMessage = 'Error deleting asset';
+                            try {
+                                const response = JSON.parse(xhr.responseText);
+                                errorMessage = response.message || errorMessage;
+                            } catch (e) {
+                                errorMessage += ': ' + error;
+                            }
+                            alert(errorMessage);
+                        }
+                    });
+                }
+            });
+            
+            // Handle asset editing (keep existing implementation)
+            $('.edit-asset').click(function(e) {
+                e.preventDefault();
                 const assetId = $(this).data('id');
+                editingAssetId = assetId;
+                isEditing = true;
+
+                // Update modal title
+                $('.modal-title').text('Edit Asset');
+
+                // Fetch asset details
                 $.ajax({
-                    url: "{% url 'delete_asset' 0 %}".replace('0', assetId),
-                    type: 'POST',
-                    headers: {
-                        'X-CSRFToken': '{{ csrf_token }}'
-                    },
+                    url: "{% url 'get_asset_details' 0 %}".replace('0', assetId),
+                    type: 'GET',
                     success: function(response) {
                         if (response.status === 'success') {
-                            location.reload();
+                            const asset = response.asset;
+                            
+                            // Populate form fields
+                            $('#asset_number').val(asset.asset_number);
+                            $('#serial_number').val(asset.serial_number);
+                            $('#name').val(asset.name);
+                            $('#category').val(asset.category);
+                            $('#department').val(asset.department);
+                            $('#condition').val(asset.condition);
+                            $('#location').val(asset.location);
+                            $('#purchase_date').val(asset.purchase_date);
+                            $('#purchase_cost').val(asset.purchase_cost);
+                            $('#description').val(asset.description);
+
+                            // Update form action for editing
+                            $('#receiveAssetForm').attr('action', "{% url 'edit_asset' 0 %}".replace('0', assetId));
+
+                            // Show modal
+                            $('#receiveAssetModal').modal('show');
                         } else {
-                            alert(response.message || 'Error deleting asset');
+                            alert(response.message || 'Error fetching asset details');
                         }
                     },
                     error: function(xhr, status, error) {
-                        let errorMessage = 'Error deleting asset';
+                        let errorMessage = 'Error fetching asset details';
                         try {
                             const response = JSON.parse(xhr.responseText);
                             errorMessage = response.message || errorMessage;
@@ -297,81 +485,29 @@
                         alert(errorMessage);
                     }
                 });
-            }
-        });
-
-        // Handle asset editing
-        $('.edit-asset').click(function(e) {
-            e.preventDefault();
-            const assetId = $(this).data('id');
-            editingAssetId = assetId;
-            isEditing = true;
-
-            // Update modal title
-            $('.modal-title').text('Edit Asset');
-
-            // Fetch asset details
-            $.ajax({
-                url: "{% url 'get_asset_details' 0 %}".replace('0', assetId),
-                type: 'GET',
-                success: function(response) {
-                    if (response.status === 'success') {
-                        const asset = response.asset;
-                        
-                        // Populate form fields
-                        $('#asset_number').val(asset.asset_number);
-                        $('#serial_number').val(asset.serial_number);
-                        $('#name').val(asset.name);
-                        $('#category').val(asset.category);
-                        $('#department').val(asset.department);
-                        $('#condition').val(asset.condition);
-                        $('#location').val(asset.location);
-                        $('#purchase_date').val(asset.purchase_date);
-                        $('#purchase_cost').val(asset.purchase_cost);
-                        $('#description').val(asset.description);
-
-                        // Update form action for editing
-                        $('#receiveAssetForm').attr('action', "{% url 'edit_asset' 0 %}".replace('0', assetId));
-
-                        // Show modal
-                        $('#receiveAssetModal').modal('show');
-                    } else {
-                        alert(response.message || 'Error fetching asset details');
-                    }
-                },
-                error: function(xhr, status, error) {
-                    let errorMessage = 'Error fetching asset details';
-                    try {
-                        const response = JSON.parse(xhr.responseText);
-                        errorMessage = response.message || errorMessage;
-                    } catch (e) {
-                        errorMessage += ': ' + error;
-                    }
-                    alert(errorMessage);
-                }
             });
-        });
-
-        // Reset form and editing state when modal is closed
-        $('#receiveAssetModal').on('hidden.bs.modal', function () {
-            $('#receiveAssetForm')[0].reset();
-            isEditing = false;
-            editingAssetId = null;
-            $('.modal-title').text('Receive New Asset');
-            $('#receiveAssetForm').attr('action', "{% url 'add_asset' %}");
-        });
-
-        // Reset editing state when "Receive IT Asset" button is clicked
-        $('[data-bs-target="#receiveAssetModal"]').not('.edit-asset').click(function() {
-            isEditing = false;
-            editingAssetId = null;
-            $('.modal-title').text('Receive New Asset');
-            $('#receiveAssetForm')[0].reset();
-            $('#receiveAssetForm').attr('action', "{% url 'add_asset' %}");
-        });
+            
+            // Reset form and editing state when modal is closed (keep existing implementation)
+            $('#receiveAssetModal').on('hidden.bs.modal', function () {
+                $('#receiveAssetForm')[0].reset();
+                isEditing = false;
+                editingAssetId = null;
+                $('.modal-title').text('Receive New Asset');
+                $('#receiveAssetForm').attr('action', "{% url 'add_asset' %}");
+            });
+            
+            // Reset editing state when "Receive IT Asset" button is clicked (keep existing implementation)
+            $('[data-bs-target="#receiveAssetModal"]').not('.edit-asset').click(function() {
+                isEditing = false;
+                editingAssetId = null;
+                $('.modal-title').text('Receive New Asset');
+                $('#receiveAssetForm')[0].reset();
+                $('#receiveAssetForm').attr('action', "{% url 'add_asset' %}");
+            });
+        }
     });
 
-    // Print Asset Report function
+    // Print Asset Report function (keep existing implementation)
     function printAssetReport() {
         // Create a new window for printing
         const printWindow = window.open('', '_blank');
@@ -509,7 +645,7 @@
         printWindow.document.close();
     }
 
-    // Generate Asset Report function
+    // Generate Asset Report function (keep existing implementation)
     function generateAssetReport(assetId) {
         // Fetch detailed asset information
         $.ajax({
@@ -693,4 +829,4 @@
         });
     }
 </script>
-{% endblock %} 
+{% endblock %}
